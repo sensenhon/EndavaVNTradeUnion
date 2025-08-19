@@ -45,7 +45,7 @@
             <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
             {% for field, label in display_fields %}
                 {% if field == 'trade_union_member' %}
-                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:50px; max-width:70px; white-space:nowrap;">Membership</th>
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
                 {% elif field == 'person_number' %}
                     {# Bỏ qua cột person_number vì đã có cột No. #}
                 {% elif field == 'floor' %}
@@ -70,7 +70,7 @@
                     <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
                     {% for field, label in display_fields %}
                         {% if field == 'trade_union_member' %}
-                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                                 {% if emp.trade_union_member %}Yes{% else %}No{% endif %}
                             </td>
                         {% elif field == 'person_number' %}

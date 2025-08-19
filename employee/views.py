@@ -380,7 +380,17 @@ def profile(request):
 	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
 	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
 	# Ẩn thông tin nhạy cảm nếu là TU committee xem profile người khác
-	hidden_fields = ['identity_number', 'native_place', 'ethnicity', 'religion', 'education_level', 'specialization', 'address']
+	sensitive_fields = ['identity_number', 'native_place', 'ethnicity', 'religion', 'education_level', 'specialization', 'address']
+	field_labels = {
+		'identity_number': 'Identity Number',
+		'native_place': 'Native Place',
+		'ethnicity': 'Ethnicity',
+		'religion': 'Religion',
+		'education_level': 'Education Level',
+		'specialization': 'Specialization',
+		'address': 'Address',
+	}
+	hidden_fields = sensitive_fields + [field_labels[f] for f in sensitive_fields]
 	show_limited = False
 	if request.user.groups.filter(name='TU committee').exists() and emp_id and int(emp_id) != request.user.employee.id:
 		show_limited = True

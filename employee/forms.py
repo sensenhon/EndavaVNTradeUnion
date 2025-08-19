@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.crypto import get_random_string
 class EmployeeLoginForm(forms.Form):
     username = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}), label='Username')
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}), required=True, label='Password')
@@ -49,6 +50,7 @@ class EmployeeRegisterForm(forms.ModelForm):
         ]
 
     def save(self, commit=True):
+        
         # Nếu có trường username thì tạo User mới (đăng ký), nếu không thì chỉ cập nhật Employee
         if 'username' in self.cleaned_data:
             user = User.objects.create_user(
@@ -62,6 +64,13 @@ class EmployeeRegisterForm(forms.ModelForm):
             employee = super().save(commit=False)
         # Chuyển đổi giá trị từ radio sang boolean
         employee.trade_union_member = True if self.cleaned_data.get('trade_union_member', False) == 'True' else False
+        # Ensure unique person_number
+        if not employee.person_number:
+            while True:
+                rand_num = get_random_string(8)
+                if not Employee.objects.filter(person_number=rand_num).exists():
+                    employee.person_number = rand_num
+                    break
         if commit:
             employee.save()
         return employee
