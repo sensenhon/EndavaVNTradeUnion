@@ -55,6 +55,11 @@ def is_committee_or_superuser(user):
 @user_passes_test(is_committee_or_superuser)
 def committee_dashboard(request):
 	display_fields = DISPLAY_FIELDS
+	if request.user.groups.filter(name='TU committee').exists():
+		hidden_fields = [
+			'identity_number', 'native_place', 'job_title', 'ethnicity', 'religion', 'education_level', 'specialization', 'address', 'dob'
+		]
+		display_fields = [f for f in DISPLAY_FIELDS if f[0] not in hidden_fields]
 	employees = Employee.objects.all()
 	discipline_list = Discipline.objects.all().order_by('name')
 	floor_list = Floor.objects.all().order_by('name')
@@ -222,8 +227,29 @@ def change_password(request):
 
 @login_required
 def edit_profile(request):
-	emp_id = request.GET.get('id')
-	if request.user.is_superuser and emp_id:
+	# Ẩn thông tin nhạy cảm nếu là TU committee chỉnh employee khác
+	# Hide by both field names and display labels
+	sensitive_fields = ['identity_number', 'native_place', 'ethnicity', 'religion', 'education_level', 'specialization', 'address']
+	field_labels = {
+		'identity_number': 'Identity Number',
+		'native_place': 'Native Place',
+		'ethnicity': 'Ethnicity',
+		'religion': 'Religion',
+		'education_level': 'Education Level',
+		'specialization': 'Specialization',
+		'address': 'Address',
+	}
+	hidden_fields = sensitive_fields + [field_labels[f] for f in sensitive_fields]
+	show_limited = False
+	emp_id = request.GET.get('id', None)
+	if request.user.groups.filter(name='TU committee').exists() and emp_id:
+		try:
+			user_employee_id = Employee.objects.get(user=request.user).id
+			if int(emp_id) != user_employee_id:
+				show_limited = True
+		except Employee.DoesNotExist:
+			show_limited = True
+	if (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()) and emp_id:
 		employee = Employee.objects.get(id=emp_id)
 	else:
 		employee = Employee.objects.get(user=request.user)
@@ -293,8 +319,8 @@ def edit_profile(request):
 					edited_by=request.user,
 					changes=changes_str
 				)
-			# Nếu là superuser thì redirect về /profile/?id=<employee_id>, còn lại thì về /profile/
-			if request.user.is_superuser and emp_id:
+			# Nếu là superuser hoặc TU committee thì redirect về /profile/?id=<employee_id>, còn lại thì về /profile/
+			if (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()) and emp_id:
 				return redirect(f'/profile/?id={emp_id}')
 			else:
 				return redirect('/profile/')
@@ -302,13 +328,19 @@ def edit_profile(request):
 		form = EmployeeUpdateForm(instance=employee)
 	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
 	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
-	return render(request, 'employee/edit_profile.html', {'form': form, 'is_superuser': is_superuser, 'is_committee': is_committee})
+	return render(request, 'employee/edit_profile.html', {
+		'form': form,
+		'is_superuser': is_superuser,
+		'is_committee': is_committee,
+		'show_limited': show_limited,
+		'hidden_fields': hidden_fields
+	})
 
 
 @login_required
 def profile(request):
 	emp_id = request.GET.get('id')
-	if request.user.is_superuser and emp_id:
+	if (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()) and emp_id:
 		try:
 			employee = Employee.objects.get(id=emp_id)
 		except Employee.DoesNotExist:
@@ -347,7 +379,21 @@ def profile(request):
 	history = employee.edithistory_set.order_by('-edit_time')
 	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
 	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
-	return render(request, 'employee/profile.html', {'employee': employee, 'formset': formset, 'children': children, 'history': history, 'is_superuser': is_superuser, 'is_committee': is_committee})
+	# Ẩn thông tin nhạy cảm nếu là TU committee xem profile người khác
+	hidden_fields = ['identity_number', 'native_place', 'ethnicity', 'religion', 'education_level', 'specialization', 'address']
+	show_limited = False
+	if request.user.groups.filter(name='TU committee').exists() and emp_id and int(emp_id) != request.user.employee.id:
+		show_limited = True
+	return render(request, 'employee/profile.html', {
+		'employee': employee,
+		'formset': formset,
+		'children': children,
+		'history': history,
+		'is_superuser': is_superuser,
+		'is_committee': is_committee,
+		'show_limited': show_limited,
+		'hidden_fields': hidden_fields
+	})
 
 
 def login_view(request):

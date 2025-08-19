@@ -45,7 +45,7 @@
             <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
             {% for field, label in display_fields %}
                 {% if field == 'trade_union_member' %}
-                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:70px; max-width:120px; white-space:nowrap;">Membership</th>
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:50px; max-width:70px; white-space:nowrap;">Membership</th>
                 {% elif field == 'person_number' %}
                     {# Bỏ qua cột person_number vì đã có cột No. #}
                 {% elif field == 'floor' %}
@@ -57,11 +57,11 @@
                 {% elif field == 'religion' %}
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">{{ label }}</th>
                 {% else %}
-                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:70px; max-width:120px; white-space:nowrap;">{{ label }}</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:100px; max-width:180px; white-space:nowrap;">{{ label }}</th>
                 {% endif %}
             {% endfor %}
             <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
-            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:80px; white-space:nowrap;">History</th>
+            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:120px; white-space:nowrap;">History</th>
         </tr>
     </thead>
             <tbody>
@@ -107,8 +107,16 @@
                                     {{ emp|get_field_display:field }}
                                 {% endif %}
                             </td>
+                        {% elif field == 'identity_number' %}
+                            <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:100px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if field == 'user' %}
+                                    {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                {% else %}
+                                    {{ emp|get_field_display:field }}
+                                {% endif %}
+                            </td>
                         {% elif field == 'birth_month' %}
-                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:50px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            <td style="text-align:center; padding:6px 2px; vertical-align:middle; font-size:0.75em; width:32px; max-width:32px; min-width:32px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                                 {% if emp.dob %}{{ emp.dob|date:'n' }}{% else %}-{% endif %}
                             </td>
                         {% else %}

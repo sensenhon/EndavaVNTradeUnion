@@ -6,7 +6,9 @@
     <form method="post" class="border p-4 rounded bg-light shadow">
         {% csrf_token %}
         {% for field in form %}
-            {% if field.name == 'trade_union_member' %}
+            {% if show_limited and field.name in hidden_fields %}
+                {# Ẩn field nhạy cảm #}
+            {% elif field.name == 'trade_union_member' %}
                 <div class="mb-3">
                     <label class="form-label d-block">{{ field.label }} {% if field.field.required %}<span style="color:red">*</span>{% endif %}</label>
                     <div class="form-check form-check-inline">
