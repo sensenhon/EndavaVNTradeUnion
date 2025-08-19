@@ -1,0 +1,387 @@
+
+import io
+import pandas as pd
+from django.http import HttpResponse
+from django.contrib.auth.models import Group
+from django.contrib.auth.decorators import user_passes_test
+from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children
+from django.urls import reverse
+from django.contrib.auth import logout
+from django import forms
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+from django.forms import modelformset_factory
+from django.forms import inlineformset_factory
+from .forms import EmployeeRegisterForm
+from django.forms import modelformset_factory
+from django.utils.crypto import get_random_string
+from django.contrib.auth import authenticate, login as auth_login
+from django.http import JsonResponse
+from django.contrib.auth.models import User
+from .forms import EmployeeLoginForm
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import EmployeeRegisterForm
+
+# Dùng chung cho dashboard và export
+DISPLAY_FIELDS = [
+	('person_number', 'Employee ID'),
+	('user', 'Username'),
+	('full_name_en', 'Full name (EN)'),
+	('full_name_vn', 'Full name (VN)'),
+	('email', 'Email'),
+	('gender', 'Gender'),
+	('dob', 'Birth Date'),
+	('birth_month', 'Birth Month'),
+	('discipline', 'Discipline'),
+	('floor', 'Floor'),
+	('job_title', 'Position'),
+	('working_type', 'Work Type'),
+	('identity_number', 'Identity Number'),
+	('native_place', 'Native Place'),
+	('ethnicity', 'Ethnicity'),
+	('religion', 'Religion'),
+	('education_level', 'Education Level'),
+	('specialization', 'Specialization'),
+	('address', 'Address'),
+	('trade_union_member', 'Trade Union Member'),
+]
+
+def is_committee_or_superuser(user):
+	return user.is_superuser or user.groups.filter(name='TU committee').exists()
+
+@user_passes_test(is_committee_or_superuser)
+@user_passes_test(is_committee_or_superuser)
+def committee_dashboard(request):
+	display_fields = DISPLAY_FIELDS
+	employees = Employee.objects.all()
+	discipline_list = Discipline.objects.all().order_by('name')
+	floor_list = Floor.objects.all().order_by('name')
+	# Filtering
+	name_query = request.GET.get('name', '').strip()
+	discipline_query = request.GET.get('discipline', '').strip()
+	floor_query = request.GET.get('floor', '').strip()
+	birth_month_query = request.GET.getlist('birth_month')
+	sort_field = request.GET.get('sort', '')
+	birth_month_query = [m for m in birth_month_query if m]
+	if name_query:
+		employees = employees.filter(full_name_en__icontains=name_query)
+	if discipline_query:
+		employees = employees.filter(discipline__name__icontains=discipline_query)
+	if floor_query:
+		employees = employees.filter(floor__name__icontains=floor_query)
+	if birth_month_query: 
+		employees = employees.filter(dob__month__in=birth_month_query) 
+	# Sorting
+	valid_sort_fields = [f[0] for f in display_fields if f[0] != 'birth_month']
+	if sort_field and sort_field in valid_sort_fields:
+		employees = employees.order_by(sort_field)
+	else:
+		employees = employees.order_by('dob__month')
+	histories = EditHistory.objects.all().order_by('-edit_time')
+	is_committee = request.user.groups.filter(name='TU committee').exists()
+	return render(request, 'employee/committee_dashboard.html', {
+		'employees': employees,
+		'histories': histories,
+		'display_fields': display_fields,
+		'discipline_list': discipline_list,
+		'floor_list': floor_list,
+		'birth_month_options': range(1, 13),
+		'selected_birth_month': birth_month_query,
+		'is_superuser': request.user.is_superuser,
+		'is_committee': is_committee
+	})
+
+# Export dashboard to Excel (filtered)
+@user_passes_test(is_committee_or_superuser)
+def export_dashboard_excel(request):
+	employees = Employee.objects.all()
+	name_query = request.GET.get('name', '').strip()
+	discipline_query = request.GET.get('discipline', '').strip()
+	floor_query = request.GET.get('floor', '').strip()
+	birth_month_query = [m for m in request.GET.getlist('birth_month') if m]
+	sort_field = request.GET.get('sort', '')
+	if name_query:
+		employees = employees.filter(full_name_en__icontains=name_query)
+	if discipline_query:
+		employees = employees.filter(discipline__name__icontains=discipline_query)
+	if floor_query:
+		employees = employees.filter(floor__name__icontains=floor_query)
+	if birth_month_query:
+		employees = employees.filter(dob__month__in=birth_month_query)
+	display_fields = DISPLAY_FIELDS
+	valid_sort_fields = [f[0] for f in display_fields]
+	if sort_field and sort_field in valid_sort_fields:
+		employees = employees.order_by(sort_field)
+	else:
+		employees = employees.order_by('dob__month')
+	# Prepare data for Excel
+	data = []
+	for emp in employees:
+		row = []
+		for field, label in display_fields:
+			if field == 'user':
+				row.append(emp.user.username if emp.user else '')
+			elif field == 'gender':
+				row.append(emp.gender.name if emp.gender else '')
+			elif field == 'discipline':
+				row.append(emp.discipline.name if emp.discipline else '')
+			elif field == 'floor':
+				row.append(emp.floor.name if emp.floor else '')
+			elif field == 'job_title':
+				row.append(emp.job_title.name if emp.job_title else '')
+			elif field == 'working_type':
+				row.append(emp.working_type.name if emp.working_type else '')
+			elif field == 'dob':
+				row.append(emp.dob.strftime('%Y-%m-%d') if emp.dob else '')
+			else:
+				row.append(getattr(emp, field, ''))
+		data.append(row)
+	df = pd.DataFrame(data, columns=[label for field, label in display_fields])
+	output = io.BytesIO()
+	with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+		df.to_excel(writer, index=False, sheet_name='Dashboard')
+	output.seek(0)
+	response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+	response['Content-Disposition'] = 'attachment; filename=dashboard.xlsx'
+	return response
+
+def logout_view(request):
+	logout(request)
+	return redirect('home')
+
+@login_required
+def edit_children(request):
+	employee = Employee.objects.get(user=request.user)
+	
+	ChildrenFormSet = inlineformset_factory(
+		Employee,
+		Children,
+		fields=('name', 'dob'),
+		extra=1,
+		can_delete=True,
+		widgets={
+			'dob': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'placeholder': 'YYYY-MM-DD'})
+		}
+	)
+	if request.method == 'POST':
+		formset = ChildrenFormSet(request.POST, instance=employee)
+		if formset.is_valid():
+			old_children = list(employee.children.all())
+			old_map = {c.id: c for c in old_children}
+			children = formset.save(commit=False)
+			changes = []
+			# Detect add/update
+			for child in children:
+				child.employee = employee
+				if child.id is None:
+					changes.append(f"Added child: {child.name} ({child.dob})")
+				else:
+					old = old_map.get(child.id)
+					if old and (old.name != child.name or old.dob != child.dob):
+						changes.append(f"Updated child: {old.name} ({old.dob}) -> {child.name} ({child.dob})")
+				child.save()
+			# Detect delete
+			for obj in formset.deleted_objects:
+				changes.append(f"Deleted child: {obj.name} ({obj.dob})")
+				obj.delete()
+			formset.save()
+			# Ghi lịch sử nếu có thay đổi
+			if changes:
+				
+				EditHistory.objects.create(
+					employee=employee,
+					edited_by=request.user,
+					changes='; '.join(changes)
+				)
+			print("Formset valid, redirecting to profile")
+			return redirect('profile')
+		else:
+			print("Formset errors:", formset.errors)
+	else:
+		formset = ChildrenFormSet(instance=employee)
+	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+	return render(request, 'employee/edit_children.html', {'formset': formset, 'is_superuser': is_superuser, 'is_committee': is_committee})
+
+@login_required
+def change_password(request):
+	if request.method == 'POST':
+		form = PasswordChangeForm(request.user, request.POST)
+		if form.is_valid():
+			user = form.save()
+			update_session_auth_hash(request, user)  # Giữ đăng nhập
+			return redirect('profile')
+	else:
+		form = PasswordChangeForm(request.user)
+	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+	return render(request, 'employee/change_password.html', {'form': form, 'is_superuser': is_superuser, 'is_committee': is_committee})
+
+
+@login_required
+def edit_profile(request):
+	emp_id = request.GET.get('id')
+	if request.user.is_superuser and emp_id:
+		employee = Employee.objects.get(id=emp_id)
+	else:
+		employee = Employee.objects.get(user=request.user)
+	class EmployeeUpdateForm(EmployeeRegisterForm):
+		class Meta(EmployeeRegisterForm.Meta):
+			exclude = ['username', 'password']
+		def __init__(self, *args, **kwargs):
+			super().__init__(*args, **kwargs)
+			for field in ['username', 'password']:
+				if field in self.fields:
+					self.fields.pop(field)
+			# Nếu là employee tự chỉnh thì disable 3 field
+			if not (request.user.is_superuser and emp_id):
+				for field in ['full_name_en', 'full_name_vn', 'email']:
+					if field in self.fields:
+						self.fields[field].disabled = True
+	if request.method == 'POST':
+		form = EmployeeUpdateForm(request.POST, instance=employee)
+		if form.is_valid():
+			# Lưu dữ liệu cũ
+			old_employee = Employee.objects.get(pk=employee.pk)
+			updated_employee = form.save()
+			changes = []
+			field_labels = {
+				'full_name_en': 'Full name (EN)',
+				'full_name_vn': 'Full name (VI)',
+				'dob': 'Date of Birth',
+				'gender': 'Gender',
+				'discipline': 'Discipline',
+				'job_title': 'Job Title',
+				'floor': 'Floor',
+				'working_type': 'Working Type',
+				'identity_number': 'Identity Number',
+				'native_place': 'Native Place',
+				'ethnicity': 'Ethnicity',
+				'religion': 'Religion',
+				'education_level': 'Education Level',
+				'specialization': 'Specialization',
+				'address': 'Address',
+				'trade_union_member': 'Trade Union member',
+			}
+			compare_fields = [
+				'full_name_en', 'full_name_vn', 'dob', 'gender', 'discipline', 'job_title', 'floor',
+				'working_type', 'identity_number', 'native_place', 'ethnicity', 'religion',
+				'education_level', 'specialization', 'address', 'trade_union_member'
+			]
+			for field in compare_fields:
+				old_val = getattr(old_employee, field)
+				new_val = getattr(updated_employee, field)
+				# Nếu là FK thì lấy tên
+				if hasattr(new_val, 'name'):
+					new_val = new_val.name
+				if hasattr(old_val, 'name'):
+					old_val = old_val.name
+				# Boolean cho trade_union_member
+				if field == 'trade_union_member':
+					old_val = 'Yes' if old_val else 'No'
+					new_val = 'Yes' if new_val else 'No'
+				if old_val != new_val:
+					label = field_labels.get(field, field)
+					changes.append(f"{label}: '{old_val}' → '{new_val}'")
+			if changes:
+				changes_str = '; '.join(changes)
+				print(f"EditHistory: {changes_str}")
+				EditHistory.objects.create(
+					employee=employee,
+					edited_by=request.user,
+					changes=changes_str
+				)
+			# Nếu là superuser thì redirect về /profile/?id=<employee_id>, còn lại thì về /profile/
+			if request.user.is_superuser and emp_id:
+				return redirect(f'/profile/?id={emp_id}')
+			else:
+				return redirect('/profile/')
+	else:
+		form = EmployeeUpdateForm(instance=employee)
+	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+	return render(request, 'employee/edit_profile.html', {'form': form, 'is_superuser': is_superuser, 'is_committee': is_committee})
+
+
+@login_required
+def profile(request):
+	emp_id = request.GET.get('id')
+	if request.user.is_superuser and emp_id:
+		try:
+			employee = Employee.objects.get(id=emp_id)
+		except Employee.DoesNotExist:
+			return render(request, 'employee/profile.html', {'error': 'Employee not found.'})
+	else:
+		try:
+			employee = Employee.objects.get(user=request.user)
+		except Employee.DoesNotExist:
+			# Tự động tạo Employee cho superuser nếu chưa có
+			if request.user.is_superuser:
+				employee = Employee.objects.create(
+					user=request.user,
+					person_number=get_random_string(8),
+					full_name_en=request.user.username,
+					full_name_vn=request.user.username,
+					email=request.user.email or f"{request.user.username}@example.com",
+					dob="2000-01-01"
+				)
+			else:
+				return render(request, 'employee/profile.html', {'error': 'Bạn chưa có hồ sơ nhân viên.'})
+	ChildrenFormSet = modelformset_factory(Children, fields=('name', 'dob'), extra=1, can_delete=True)
+	if request.method == 'POST':
+		formset = ChildrenFormSet(request.POST, queryset=employee.children.all())
+		if formset.is_valid():
+			children = formset.save(commit=False)
+			for child in children:
+				child.employee = employee
+				child.save()
+			for obj in formset.deleted_objects:
+				obj.delete()
+		# Sau khi xử lý POST, reload lại dữ liệu
+		formset = ChildrenFormSet(queryset=employee.children.all())
+	else:
+		formset = ChildrenFormSet(queryset=employee.children.all())
+	children = employee.children.all()
+	history = employee.edithistory_set.order_by('-edit_time')
+	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+	return render(request, 'employee/profile.html', {'employee': employee, 'formset': formset, 'children': children, 'history': history, 'is_superuser': is_superuser, 'is_committee': is_committee})
+
+
+def login_view(request):
+	if request.method == 'POST':
+		form = EmployeeLoginForm(request.POST)
+		if form.is_valid():
+			username = form.cleaned_data['username']
+			password = form.cleaned_data['password']
+			user = authenticate(request, username=username, password=password)
+			if user is not None:
+				auth_login(request, user)
+				return redirect('/home/')
+			else:
+				form.add_error(None, 'Username hoặc password không đúng.')
+	else:
+		form = EmployeeLoginForm()
+	return render(request, 'employee/login.html', {'form': form})
+
+def check_username(request):
+	username = request.GET.get('username', '')
+	exists = User.objects.filter(username=username).exists()
+	return JsonResponse({'exists': exists})
+def home(request):
+	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+	return render(request, 'employee/home.html', {'is_superuser': is_superuser, 'is_committee': is_committee})
+
+def register(request):
+	if request.method == 'POST':
+		form = EmployeeRegisterForm(request.POST)
+		if form.is_valid():
+			form.save()
+			messages.success(request, 'Đăng ký thành công!')
+			return redirect('/home/')  # chuyển hướng tới trang Home
+	else:
+		form = EmployeeRegisterForm()
+	return render(request, 'employee/register.html', {'form': form})

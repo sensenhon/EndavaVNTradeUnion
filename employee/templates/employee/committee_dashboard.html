@@ -1,0 +1,143 @@
+{% extends 'employee/base.html' %}
+{% load employee_extras %}
+{% block content %}
+<h2 class="text-center" style="margin-bottom:24px;">Committee Dashboard</h2>
+<div class="container" style="margin-top:64px;">
+    <div class="d-flex mb-2" style="align-items:center; gap:6px; flex-wrap:wrap; justify-content:space-between;">
+        <form method="get" class="d-flex" style="align-items:center; gap:6px; flex-wrap:wrap; flex:1;">
+            <input type="text" name="name" class="form-control form-control-sm" placeholder="Search name" value="{{ request.GET.name }}">
+        </form>
+        <form method="get" class="d-flex" style="align-items:center; gap:6px; flex-wrap:wrap;">
+            <select name="discipline" class="form-select form-control-sm" style="color:rgba(33,37,41,0.6); border-color:rgba(33,37,41,0.3); background-color:rgba(255,255,255,0.95);">
+                <option value="" style="color:rgba(33,37,41,0.5);">All Disciplines</option>
+                {% for d in discipline_list %}
+                    <option value="{{ d.name }}" {% if request.GET.discipline == d.name %}selected{% endif %} style="color:rgba(33,37,41,0.7);">{{ d.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="birth_month" class="form-select form-control-sm" style="color:rgba(33,37,41,0.6); border-color:rgba(33,37,41,0.3); background-color:rgba(255,255,255,0.95);">
+                <option value="" {% if not selected_birth_month %}selected{% endif %} style="color:rgba(33,37,41,0.5);">All Months</option>
+                {% for m in birth_month_options %}
+                    <option value="{{ m }}" {% if selected_birth_month == m|stringformat:'s' %}selected{% endif %} style="color:rgba(33,37,41,0.7);">{{ m }}</option>
+                {% endfor %}
+            </select>
+            <select name="floor" class="form-select form-control-sm" style="color:rgba(33,37,41,0.6); border-color:rgba(33,37,41,0.3); background-color:rgba(255,255,255,0.95);">
+                <option value="" style="color:rgba(33,37,41,0.5);">All Floors</option>
+                {% for f in floor_list %}
+                    <option value="{{ f.name }}" {% if request.GET.floor == f.name %}selected{% endif %} style="color:rgba(33,37,41,0.7);">{{ f.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="sort" class="form-select form-control-sm" style="color:rgba(33,37,41,0.6); border-color:rgba(33,37,41,0.3); background-color:rgba(255,255,255,0.95);">
+                <option value="">Sort by...</option>
+                {% for field, label in display_fields %}
+                    <option value="{{ field }}" {% if request.GET.sort == field %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary" style="margin-top:0px;">Filter/Sort</button>
+            <a href="?" class="btn btn-sm btn-secondary ms-2" style="margin-top:0px;">Reset</a>
+            <a href="{% url 'export_dashboard_excel' %}?name={{ request.GET.name }}&discipline={{ request.GET.discipline }}&floor={{ request.GET.floor }}{% for m in selected_birth_month %}&birth_month={{ m }}{% endfor %}&sort={{ request.GET.sort }}" class="btn btn-sm btn-success ms-2" style="margin-top:0px; white-space:nowrap;">Export Excel</a>
+        </form>
+    </div>
+
+    <div style="overflow-x:auto; width:100%; margin-top:32px;">
+        <table class="table table-bordered table-striped" style="background: #fff; min-width:1200px; width:100%;">
+    <thead>
+        <tr>
+            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
+            {% for field, label in display_fields %}
+                {% if field == 'trade_union_member' %}
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:70px; max-width:120px; white-space:nowrap;">Membership</th>
+                {% elif field == 'person_number' %}
+                    {# Bỏ qua cột person_number vì đã có cột No. #}
+                {% elif field == 'floor' %}
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:30px; max-width:50px; white-space:nowrap;">{{ label }}</th>
+                {% elif field == 'gender' %}
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:30px; max-width:50px; white-space:nowrap;">{{ label }}</th>
+                {% elif field == 'ethnicity' %}
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:90px; white-space:nowrap;">{{ label }}</th>
+                {% elif field == 'religion' %}
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">{{ label }}</th>
+                {% else %}
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:70px; max-width:120px; white-space:nowrap;">{{ label }}</th>
+                {% endif %}
+            {% endfor %}
+            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
+            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:80px; white-space:nowrap;">History</th>
+        </tr>
+    </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
+                    {% for field, label in display_fields %}
+                        {% if field == 'trade_union_member' %}
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if emp.trade_union_member %}Yes{% else %}No{% endif %}
+                            </td>
+                        {% elif field == 'person_number' %}
+                            {# Bỏ qua cột person_number vì đã có cột No. #}
+                        {% elif field == 'floor' %}
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:50px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if field == 'user' %}
+                                    {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                {% else %}
+                                    {{ emp|get_field_display:field }}
+                                {% endif %}
+                            </td>
+                        {% elif field == 'gender' %}
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:50px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if field == 'user' %}
+                                    {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                {% else %}
+                                    {{ emp|get_field_display:field }}
+                                {% endif %}
+                            </td>
+                        {% elif field == 'ethnicity' %}
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if field == 'user' %}
+                                    {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                {% else %}
+                                    {{ emp|get_field_display:field }}
+                                {% endif %}
+                            </td>
+                        {% elif field == 'religion' %}
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if field == 'user' %}
+                                    {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                {% else %}
+                                    {{ emp|get_field_display:field }}
+                                {% endif %}
+                            </td>
+                        {% elif field == 'birth_month' %}
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:50px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if emp.dob %}{{ emp.dob|date:'n' }}{% else %}-{% endif %}
+                            </td>
+                        {% else %}
+                            <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if field == 'user' %}
+                                    {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                {% else %}
+                                    {{ emp|get_field_display:field }}
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                    <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {% with children=emp.children.all %}
+                            {% if children.count > 0 %}
+                                {% for child in children %}
+                                    {{ child.name }} ({{ child.dob }})<br>
+                                {% endfor %}
+                            {% else %}
+                                No children
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">
+                        <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-outline-info">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {# Ẩn phần lịch sử dưới bảng #}
+{% endblock %}

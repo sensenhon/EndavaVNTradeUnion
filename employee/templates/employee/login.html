@@ -1,0 +1,26 @@
+{% extends 'employee/base.html' %}
+{% block title %}Login - Endava VN Trade Union{% endblock %}
+{% block content %}
+<div class="container mt-5" style="max-width: 400px;">
+    <h2 class="text-center my-5">Login</h2>
+    <form method="post" action="/login/" class="border p-4 rounded bg-light shadow">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label">
+                    {{ field.label }}
+                    {% if field.field.required %}<span style="color:red">*</span>{% endif %}
+                </label>
+                {{ field }}
+                {% for error in field.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        {% if form.non_field_errors %}
+            <div class="text-danger mb-2">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+    </form>
+</div>
+{% endblock %}

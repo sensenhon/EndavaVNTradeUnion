@@ -1,0 +1,50 @@
+{% extends 'employee/base.html' %}
+{% block title %}Edit Profile - Endava VN Trade Union{% endblock %}
+{% block content %}
+<div class="container mt-5" style="max-width: 700px;">
+    <h2 class="text-center my-5">Edit Your Profile</h2>
+    <form method="post" class="border p-4 rounded bg-light shadow">
+        {% csrf_token %}
+        {% for field in form %}
+            {% if field.name == 'trade_union_member' %}
+                <div class="mb-3">
+                    <label class="form-label d-block">{{ field.label }} {% if field.field.required %}<span style="color:red">*</span>{% endif %}</label>
+                    <div class="form-check form-check-inline">
+                        {% for radio in field %}
+                                {% if forloop.first %}
+                                    <label class="form-check-label me-3">
+                                        {{ radio.tag }} {{ radio.choice_label }}
+                                    </label>
+                                {% else %}
+                                    <label class="form-check-label" style="margin-left: 40px;">
+                                        {{ radio.tag }} {{ radio.choice_label }}
+                                    </label>
+                                {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}" class="form-label">
+                        {{ field.label }}
+                        {% if field.field.required %}<span style="color:red">*</span>{% endif %}
+                    </label>
+                    {% if field.field.disabled %}
+                        <input type="text" class="form-control" value="{{ field.value }}" disabled>
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="/profile/" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+{% endblock %}

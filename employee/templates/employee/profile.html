@@ -1,0 +1,97 @@
+{% extends 'employee/base.html' %}
+{% block title %}Profile - Endava VN Trade Union{% endblock %}
+{% block content %}
+{% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% if is_superuser %}
+        <div class="alert alert-info">Bạn có thể xem profile của bất kỳ employee bằng cách truy cập: <br>
+        <code>?id=&lt;employee_id&gt;</code> (VD: <code>/profile/?id=1</code>)</div>
+    {% endif %}
+{% else %}
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="d-flex justify-content-between align-items-center text-center my-5">
+        <h2>Your Profile</h2>
+    </div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="card-title mb-0">Personal Information</h5>
+                <div>
+                    {% if is_superuser and employee.id %}
+                        <a href="/edit-profile/?id={{ employee.id }}" class="btn btn-warning btn-sm">Edit</a>
+                    {% else %}
+                        <a href="/edit-profile/" class="btn btn-warning btn-sm">Edit</a>
+                    {% endif %}
+                    <a href="{% url 'change_password' %}" class="btn btn-warning btn-sm ms-2">Change Password</a>
+                </div>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Username:</strong> {{ employee.user.username }}</li>
+                <li class="list-group-item"><strong>Email:</strong> {{ employee.email }}</li>
+                <li class="list-group-item"><strong>Full name (EN):</strong> {{ employee.full_name_en }}</li>
+                <li class="list-group-item"><strong>Full name (VI):</strong> {{ employee.full_name_vn }}</li>
+                <li class="list-group-item"><strong>Date of Birth:</strong> {{ employee.dob }}</li>
+                <li class="list-group-item"><strong>Gender:</strong> {{ employee.gender }}</li>
+                <li class="list-group-item"><strong>Discipline:</strong> {{ employee.discipline }}</li>
+                <li class="list-group-item"><strong>Job Title:</strong> {{ employee.job_title }}</li>
+                <li class="list-group-item"><strong>Floor:</strong> {{ employee.floor }}</li>
+                <li class="list-group-item"><strong>Working Type:</strong> {{ employee.working_type }}</li>
+                <li class="list-group-item"><strong>Identity Number:</strong> {{ employee.identity_number }}</li>
+                <li class="list-group-item"><strong>Native Place:</strong> {{ employee.native_place }}</li>
+                <li class="list-group-item"><strong>Ethnicity:</strong> {{ employee.ethnicity }}</li>
+                <li class="list-group-item"><strong>Religion:</strong> {{ employee.religion }}</li>
+                <li class="list-group-item"><strong>Education Level:</strong> {{ employee.education_level }}</li>
+                <li class="list-group-item"><strong>Specialization:</strong> {{ employee.specialization }}</li>
+                <li class="list-group-item"><strong>Address:</strong> {{ employee.address }}</li>
+                <li class="list-group-item"><strong>Trade Union member:</strong> {{ employee.trade_union_member|yesno:"Yes,No" }}</li>
+            </ul>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="card-title mb-0">Children</h5>
+                <a href="{% url 'edit_children' %}" class="btn btn-outline-primary btn-sm">Edit</a>
+            </div>
+            {% if children and children.count > 0 %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Date of Birth</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for child in children %}
+                        <tr>
+                            <td>{{ child.name }}</td>
+                            <td>{{ child.dob }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="text-muted">No children information</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-0">History</h5>
+            {% if history and history.count > 0 %}
+                <ul class="list-group list-group-flush">
+                    {% for h in history %}
+                    <li class="list-group-item">
+                        <div><strong>{{ h.edit_time|date:"Y-m-d H:i:s" }}</strong> by <strong>{{ h.edited_by.username }}</strong></div>
+                        <div class="text-muted small">{{ h.changes|linebreaksbr }}</div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="text-muted">No history information</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
