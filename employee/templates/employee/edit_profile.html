@@ -4,7 +4,17 @@
 <div class="container mt-5" style="max-width: 700px;">
     <h2 class="text-center my-5">Edit Your Profile</h2>
     <form method="post" class="border p-4 rounded bg-light shadow">
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
         {% csrf_token %}
+        {% if employee %}
+            <input type="hidden" name="id" value="{{ employee.id }}" />
+        {% endif %}
         {% for field in form %}
             {% if show_limited and field.name in hidden_fields %}
                 {# Ẩn field nhạy cảm #}

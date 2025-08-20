@@ -37,17 +37,17 @@
                 </div>
             </div>
             <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Username:</strong> {{ employee.user.username }}</li>
+                <li class="list-group-item"><strong>Email:</strong> {{ employee.email }}</li>
+                <li class="list-group-item"><strong>Full name (EN):</strong> {{ employee.full_name_en }}</li>
+                <li class="list-group-item"><strong>Full name (VI):</strong> {{ employee.full_name_vn }}</li>
+                <li class="list-group-item"><strong>Date of Birth:</strong> {{ employee.dob }}</li>
+                <li class="list-group-item"><strong>Gender:</strong> {{ employee.gender }}</li>
+                <li class="list-group-item"><strong>Discipline:</strong> {{ employee.discipline }}</li>
+                <li class="list-group-item"><strong>Job Title:</strong> {{ employee.job_title }}</li>
+                <li class="list-group-item"><strong>Floor:</strong> {{ employee.floor }}</li>
+                <li class="list-group-item"><strong>Working Type:</strong> {{ employee.working_type }}</li>
                 {% if not show_limited %}
-                    <li class="list-group-item"><strong>Username:</strong> {{ employee.user.username }}</li>
-                    <li class="list-group-item"><strong>Email:</strong> {{ employee.email }}</li>
-                    <li class="list-group-item"><strong>Full name (EN):</strong> {{ employee.full_name_en }}</li>
-                    <li class="list-group-item"><strong>Full name (VI):</strong> {{ employee.full_name_vn }}</li>
-                    <li class="list-group-item"><strong>Date of Birth:</strong> {{ employee.dob }}</li>
-                    <li class="list-group-item"><strong>Gender:</strong> {{ employee.gender }}</li>
-                    <li class="list-group-item"><strong>Discipline:</strong> {{ employee.discipline }}</li>
-                    <li class="list-group-item"><strong>Job Title:</strong> {{ employee.job_title }}</li>
-                    <li class="list-group-item"><strong>Floor:</strong> {{ employee.floor }}</li>
-                    <li class="list-group-item"><strong>Working Type:</strong> {{ employee.working_type }}</li>
                     <li class="list-group-item"><strong>Identity Number:</strong> {{ employee.identity_number }}</li>
                     <li class="list-group-item"><strong>Native Place:</strong> {{ employee.native_place }}</li>
                     <li class="list-group-item"><strong>Ethnicity:</strong> {{ employee.ethnicity }}</li>
@@ -55,22 +55,10 @@
                     <li class="list-group-item"><strong>Education Level:</strong> {{ employee.education_level }}</li>
                     <li class="list-group-item"><strong>Specialization:</strong> {{ employee.specialization }}</li>
                     <li class="list-group-item"><strong>Address:</strong> {{ employee.address }}</li>
-                    <li class="list-group-item"><strong>Trade Union member:</strong> {{ employee.trade_union_member|yesno:"Yes,No" }}</li>
-                    {% if is_superuser or is_committee %}
-                        <li class="list-group-item"><strong>Membership By Admin:</strong> {% if membership_type_by_admin %}{{ membership_type_by_admin.name }}{% else %}{{ "" }}{% endif %}</li>
-                    {% endif %}
-                {% else %}
-                    <li class="list-group-item"><strong>Username:</strong> {{ employee.user.username }}</li>
-                    <li class="list-group-item"><strong>Email:</strong> {{ employee.email }}</li>
-                    <li class="list-group-item"><strong>Full name (EN):</strong> {{ employee.full_name_en }}</li>
-                    <li class="list-group-item"><strong>Full name (VI):</strong> {{ employee.full_name_vn }}</li>
-                    <li class="list-group-item"><strong>Date of Birth:</strong> {{ employee.dob }}</li>
-                    <li class="list-group-item"><strong>Gender:</strong> {{ employee.gender }}</li>
-                    <li class="list-group-item"><strong>Discipline:</strong> {{ employee.discipline }}</li>
-                    <li class="list-group-item"><strong>Job Title:</strong> {{ employee.job_title }}</li>
-                    <li class="list-group-item"><strong>Floor:</strong> {{ employee.floor }}</li>
-                    <li class="list-group-item"><strong>Working Type:</strong> {{ employee.working_type }}</li>
-                    <li class="list-group-item"><strong>Trade Union member:</strong> {{ employee.trade_union_member|yesno:"Yes,No" }}</li>
+                {% endif %}
+                <li class="list-group-item"><strong>Trade Union member:</strong> {{ employee.trade_union_member|yesno:"Yes,No" }}</li>
+                {% if is_superuser or is_committee %}
+                    <li class="list-group-item"><strong>Membership By Admin:</strong> {% if membership_type_by_admin %}{{ membership_type_by_admin.name }}{% else %}{{ "" }}{% endif %}</li>
                 {% endif %}
             </ul>
         </div>

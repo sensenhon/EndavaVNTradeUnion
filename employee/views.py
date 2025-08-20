@@ -241,7 +241,7 @@ def edit_profile(request):
 	}
 	hidden_fields = sensitive_fields + [field_labels[f] for f in sensitive_fields]
 	show_limited = False
-	emp_id = request.GET.get('id', None)
+	emp_id = request.GET.get('id') or request.POST.get('id')
 	if request.user.groups.filter(name='TU committee').exists() and emp_id:
 		try:
 			user_employee_id = Employee.objects.get(user=request.user).id
@@ -266,12 +266,18 @@ def edit_profile(request):
 				for field in ['full_name_en', 'full_name_vn', 'email']:
 					if field in self.fields:
 						self.fields[field].disabled = True
+			# Nếu show_limited thì các trường nhạy cảm không required
+			if show_limited:
+				for field in sensitive_fields:
+					if field in self.fields:
+						self.fields[field].required = False
 			# Only show membership_type_by_admin for superuser or TU committee
 			if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
 				if 'membership_type_by_admin' in self.fields:
 					self.fields.pop('membership_type_by_admin')
 	if request.method == 'POST':
 		form = EmployeeUpdateForm(request.POST, instance=employee)
+		print('Form errors:', form.errors)
 		if form.is_valid():
 			# Lưu dữ liệu cũ
 			old_employee = Employee.objects.get(pk=employee.pk)
@@ -324,8 +330,8 @@ def edit_profile(request):
 					changes=changes_str
 				)
 			# Nếu là superuser hoặc TU committee thì redirect về /profile/?id=<employee_id>, còn lại thì về /profile/
-			if (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()) and emp_id:
-				return redirect(f'/profile/?id={emp_id}')
+			if request.user.is_superuser or request.user.groups.filter(name='TU committee').exists():
+				return redirect(f'/profile/?id={employee.id}')
 			else:
 				return redirect('/profile/')
 	else:
@@ -337,7 +343,8 @@ def edit_profile(request):
 		'is_superuser': is_superuser,
 		'is_committee': is_committee,
 		'show_limited': show_limited,
-		'hidden_fields': hidden_fields
+		'hidden_fields': hidden_fields,
+		'employee': employee
 	})
 
 

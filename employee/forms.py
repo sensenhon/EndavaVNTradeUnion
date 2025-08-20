@@ -7,6 +7,11 @@ from django.contrib.auth.models import User
 from .models import Employee, Discipline, JobTitle, Floor, Gender, WorkingType
 
 class EmployeeRegisterForm(forms.ModelForm):
+    def clean_trade_union_member(self):
+        value = self.cleaned_data.get('trade_union_member')
+        if value in ['True', True, 'yes', 'Yes', 1, '1']:
+            return True
+        return False
     from .models import MembershipTypeByAdmin
     membership_type_by_admin = forms.ModelChoiceField(
         queryset=MembershipTypeByAdmin.objects.all(),
