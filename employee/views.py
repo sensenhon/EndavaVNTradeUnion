@@ -266,6 +266,10 @@ def edit_profile(request):
 				for field in ['full_name_en', 'full_name_vn', 'email']:
 					if field in self.fields:
 						self.fields[field].disabled = True
+			# Only show membership_type_by_admin for superuser or TU committee
+			if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
+				if 'membership_type_by_admin' in self.fields:
+					self.fields.pop('membership_type_by_admin')
 	if request.method == 'POST':
 		form = EmployeeUpdateForm(request.POST, instance=employee)
 		if form.is_valid():
@@ -394,7 +398,7 @@ def profile(request):
 	show_limited = False
 	if request.user.groups.filter(name='TU committee').exists() and emp_id and int(emp_id) != request.user.employee.id:
 		show_limited = True
-	return render(request, 'employee/profile.html', {
+	context = {
 		'employee': employee,
 		'formset': formset,
 		'children': children,
@@ -402,8 +406,11 @@ def profile(request):
 		'is_superuser': is_superuser,
 		'is_committee': is_committee,
 		'show_limited': show_limited,
-		'hidden_fields': hidden_fields
-	})
+		'hidden_fields': hidden_fields,
+	}
+	if is_superuser or is_committee:
+		context['membership_type_by_admin'] = employee.membership_type_by_admin if hasattr(employee, 'membership_type_by_admin') else None
+	return render(request, 'employee/profile.html', context)
 
 
 def login_view(request):

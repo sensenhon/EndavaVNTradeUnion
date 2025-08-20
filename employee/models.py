@@ -28,7 +28,22 @@ class WorkingType(models.Model):
 	def __str__(self):
 		return self.name
 
+class MembershipTypeByAdmin(models.Model):
+	name = models.CharField(max_length=50, unique=True)
+	def __str__(self):
+		return self.name
 class Employee(models.Model):
+	def save(self, *args, **kwargs):
+		# Nếu trade_union_member là True thì gán MembershipTypeByAdmin là 'Yes', False thì là 'No'
+		if self.membership_type_by_admin is None:
+			if self.trade_union_member:
+				default_type = MembershipTypeByAdmin.objects.filter(name__iexact='Yes').first()
+			else:
+				default_type = MembershipTypeByAdmin.objects.filter(name__iexact='No').first()
+			if default_type:
+				self.membership_type_by_admin = default_type
+		super().save(*args, **kwargs)
+
 	user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
 	person_number = models.CharField(max_length=20, unique=True)
 	full_name_en = models.CharField(max_length=100)
@@ -48,6 +63,8 @@ class Employee(models.Model):
 	specialization = models.CharField(max_length=100, blank=True)
 	address = models.CharField(max_length=200, blank=True)
 	trade_union_member = models.BooleanField(default=False)
+	membership_type_by_admin = models.ForeignKey(MembershipTypeByAdmin, on_delete=models.SET_NULL, null=True, blank=True)
+	membership_since = models.DateTimeField(auto_now_add=True, null=True)
 
 	def __str__(self):
 		return f"{self.person_number} - {self.full_name_en}"

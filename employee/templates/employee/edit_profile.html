@@ -8,6 +8,19 @@
         {% for field in form %}
             {% if show_limited and field.name in hidden_fields %}
                 {# Ẩn field nhạy cảm #}
+            {% elif field.name == 'membership_type_by_admin' %}
+                {% if is_superuser or is_committee %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}" class="form-label">
+                        {{ field.label }}
+                        {% if field.field.required %}<span style="color:red">*</span>{% endif %}
+                    </label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
             {% elif field.name == 'trade_union_member' %}
                 <div class="mb-3">
                     <label class="form-label d-block">{{ field.label }} {% if field.field.required %}<span style="color:red">*</span>{% endif %}</label>

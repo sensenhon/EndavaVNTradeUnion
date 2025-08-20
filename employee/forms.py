@@ -7,6 +7,13 @@ from django.contrib.auth.models import User
 from .models import Employee, Discipline, JobTitle, Floor, Gender, WorkingType
 
 class EmployeeRegisterForm(forms.ModelForm):
+    from .models import MembershipTypeByAdmin
+    membership_type_by_admin = forms.ModelChoiceField(
+        queryset=MembershipTypeByAdmin.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Membership By Admin'
+    )
     username = forms.CharField(max_length=150, required=True, help_text='Use to login', widget=forms.TextInput(attrs={'class': 'form-control'}))
     # ...existing code...
 
@@ -46,7 +53,7 @@ class EmployeeRegisterForm(forms.ModelForm):
         fields = [
             'username', 'password', 'email', 'full_name_en', 'full_name_vn', 'dob', 'gender',
             'discipline', 'job_title', 'floor', 'working_type', 'identity_number', 'native_place', 'ethnicity',
-            'religion', 'education_level', 'specialization', 'address', 'trade_union_member'
+            'religion', 'education_level', 'specialization', 'address', 'trade_union_member', 'membership_type_by_admin'
         ]
 
     def save(self, commit=True):

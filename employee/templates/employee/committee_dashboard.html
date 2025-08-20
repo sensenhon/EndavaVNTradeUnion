@@ -46,6 +46,8 @@
             {% for field, label in display_fields %}
                 {% if field == 'trade_union_member' %}
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">MembershipByTU</th>
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:180px; white-space:nowrap;">MembershipSince</th>
                 {% elif field == 'person_number' %}
                     {# Bỏ qua cột person_number vì đã có cột No. #}
                 {% elif field == 'floor' %}
@@ -72,6 +74,12 @@
                         {% if field == 'trade_union_member' %}
                             <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                                 {% if emp.trade_union_member %}Yes{% else %}No{% endif %}
+                            </td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if emp.membership_type_by_admin %}{{ emp.membership_type_by_admin.name }}{% else %}-{% endif %}
+                            </td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if emp.membership_since %}{{ emp.membership_since|date:'F jS, Y' }}{% else %}-{% endif %}
                             </td>
                         {% elif field == 'person_number' %}
                             {# Bỏ qua cột person_number vì đã có cột No. #}

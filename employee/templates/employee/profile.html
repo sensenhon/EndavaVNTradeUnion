@@ -56,6 +56,9 @@
                     <li class="list-group-item"><strong>Specialization:</strong> {{ employee.specialization }}</li>
                     <li class="list-group-item"><strong>Address:</strong> {{ employee.address }}</li>
                     <li class="list-group-item"><strong>Trade Union member:</strong> {{ employee.trade_union_member|yesno:"Yes,No" }}</li>
+                    {% if is_superuser or is_committee %}
+                        <li class="list-group-item"><strong>Membership By Admin:</strong> {% if membership_type_by_admin %}{{ membership_type_by_admin.name }}{% else %}{{ "" }}{% endif %}</li>
+                    {% endif %}
                 {% else %}
                     <li class="list-group-item"><strong>Username:</strong> {{ employee.user.username }}</li>
                     <li class="list-group-item"><strong>Email:</strong> {{ employee.email }}</li>
