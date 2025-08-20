@@ -158,8 +158,13 @@ def logout_view(request):
 
 @login_required
 def edit_children(request):
-	employee = Employee.objects.get(user=request.user)
-	
+	emp_id = request.GET.get('id') or request.POST.get('id')
+	# Luôn ưu tiên lấy employee theo id nếu có, cho mọi trường hợp
+	if emp_id:
+		employee = Employee.objects.get(id=emp_id)
+	else:
+		employee = Employee.objects.get(user=request.user)
+
 	ChildrenFormSet = inlineformset_factory(
 		Employee,
 		Children,
@@ -170,7 +175,12 @@ def edit_children(request):
 			'dob': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'placeholder': 'YYYY-MM-DD'})
 		}
 	)
+
 	if request.method == 'POST':
+		# Đảm bảo luôn lấy đúng employee theo id trong POST
+		emp_id_post = request.POST.get('id')
+		if emp_id_post:
+			employee = Employee.objects.get(id=emp_id_post)
 		formset = ChildrenFormSet(request.POST, instance=employee)
 		if formset.is_valid():
 			old_children = list(employee.children.all())
@@ -194,21 +204,20 @@ def edit_children(request):
 			formset.save()
 			# Ghi lịch sử nếu có thay đổi
 			if changes:
-				
 				EditHistory.objects.create(
 					employee=employee,
 					edited_by=request.user,
 					changes='; '.join(changes)
 				)
 			print("Formset valid, redirecting to profile")
-			return redirect('profile')
+			return redirect(f'/profile/?id={employee.id}')
 		else:
 			print("Formset errors:", formset.errors)
 	else:
 		formset = ChildrenFormSet(instance=employee)
 	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
 	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
-	return render(request, 'employee/edit_children.html', {'formset': formset, 'is_superuser': is_superuser, 'is_committee': is_committee})
+	return render(request, 'employee/edit_children.html', {'formset': formset, 'is_superuser': is_superuser, 'is_committee': is_committee, 'employee': employee})
 
 @login_required
 def change_password(request):
@@ -261,9 +270,9 @@ def edit_profile(request):
 			for field in ['username', 'password']:
 				if field in self.fields:
 					self.fields.pop(field)
-			# Nếu là employee tự chỉnh thì disable 3 field
-			if not (request.user.is_superuser and emp_id):
-				for field in ['full_name_en', 'full_name_vn', 'email']:
+			# Nếu là employee tự chỉnh thì disable 3 field và membership_since
+			if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
+				for field in ['full_name_en', 'full_name_vn', 'email', 'membership_since']:
 					if field in self.fields:
 						self.fields[field].disabled = True
 			# Nếu show_limited thì các trường nhạy cảm không required
@@ -281,6 +290,10 @@ def edit_profile(request):
 		if form.is_valid():
 			# Lưu dữ liệu cũ
 			old_employee = Employee.objects.get(pk=employee.pk)
+			# Nếu show_limited, preserve sensitive fields
+			if show_limited:
+				for field in sensitive_fields:
+					setattr(form.instance, field, getattr(old_employee, field))
 			updated_employee = form.save()
 			changes = []
 			field_labels = {
@@ -304,7 +317,7 @@ def edit_profile(request):
 			compare_fields = [
 				'full_name_en', 'full_name_vn', 'dob', 'gender', 'discipline', 'job_title', 'floor',
 				'working_type', 'identity_number', 'native_place', 'ethnicity', 'religion',
-				'education_level', 'specialization', 'address', 'trade_union_member'
+				'education_level', 'specialization', 'address', 'trade_union_member', 'membership_since'
 			]
 			for field in compare_fields:
 				old_val = getattr(old_employee, field)
@@ -318,8 +331,19 @@ def edit_profile(request):
 				if field == 'trade_union_member':
 					old_val = 'Yes' if old_val else 'No'
 					new_val = 'Yes' if new_val else 'No'
+				# Format Membership Since
+				if field == 'membership_since':
+					import datetime
+					def format_dt(dt):
+						if isinstance(dt, datetime.datetime):
+							return dt.strftime('%B, %Y')
+						return str(dt) if dt else ''
+					old_val = format_dt(old_val)
+					new_val = format_dt(new_val)
 				if old_val != new_val:
 					label = field_labels.get(field, field)
+					if field == 'membership_since':
+						label = 'Membership Since'
 					changes.append(f"{label}: '{old_val}' → '{new_val}'")
 			if changes:
 				changes_str = '; '.join(changes)

@@ -5,6 +5,9 @@
     <form method="post" action="{% url 'edit_children' %}" class="border p-4 rounded bg-light shadow">
         {% csrf_token %}
         {{ formset.management_form }}
+        {% if employee %}
+            <input type="hidden" name="id" value="{{ employee.id }}" />
+        {% endif %}
         <table class="table">
             <thead>
                 <tr>

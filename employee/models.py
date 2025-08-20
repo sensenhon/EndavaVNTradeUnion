@@ -42,6 +42,10 @@ class Employee(models.Model):
 				default_type = MembershipTypeByAdmin.objects.filter(name__iexact='No').first()
 			if default_type:
 				self.membership_type_by_admin = default_type
+		# Tự động set membership_since nếu chưa có
+		if not self.membership_since:
+			from django.utils import timezone
+			self.membership_since = timezone.now()
 		super().save(*args, **kwargs)
 
 	user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
@@ -64,7 +68,7 @@ class Employee(models.Model):
 	address = models.CharField(max_length=200, blank=True)
 	trade_union_member = models.BooleanField(default=False)
 	membership_type_by_admin = models.ForeignKey(MembershipTypeByAdmin, on_delete=models.SET_NULL, null=True, blank=True)
-	membership_since = models.DateTimeField(auto_now_add=True, null=True)
+	membership_since = models.DateTimeField(null=True, blank=True)
 
 	def __str__(self):
 		return f"{self.person_number} - {self.full_name_en}"

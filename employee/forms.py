@@ -7,6 +7,11 @@ from django.contrib.auth.models import User
 from .models import Employee, Discipline, JobTitle, Floor, Gender, WorkingType
 
 class EmployeeRegisterForm(forms.ModelForm):
+    membership_since = forms.DateTimeField(
+        required=False,
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+        label='Membership Since'
+    )
     def clean_trade_union_member(self):
         value = self.cleaned_data.get('trade_union_member')
         if value in ['True', True, 'yes', 'Yes', 1, '1']:
@@ -58,11 +63,10 @@ class EmployeeRegisterForm(forms.ModelForm):
         fields = [
             'username', 'password', 'email', 'full_name_en', 'full_name_vn', 'dob', 'gender',
             'discipline', 'job_title', 'floor', 'working_type', 'identity_number', 'native_place', 'ethnicity',
-            'religion', 'education_level', 'specialization', 'address', 'trade_union_member', 'membership_type_by_admin'
+            'religion', 'education_level', 'specialization', 'address', 'trade_union_member', 'membership_type_by_admin', 'membership_since'
         ]
 
     def save(self, commit=True):
-        
         # Nếu có trường username thì tạo User mới (đăng ký), nếu không thì chỉ cập nhật Employee
         if 'username' in self.cleaned_data:
             user = User.objects.create_user(
@@ -75,7 +79,8 @@ class EmployeeRegisterForm(forms.ModelForm):
         else:
             employee = super().save(commit=False)
         # Chuyển đổi giá trị từ radio sang boolean
-        employee.trade_union_member = True if self.cleaned_data.get('trade_union_member', False) == 'True' else False
+        value = self.cleaned_data.get('trade_union_member')
+        employee.trade_union_member = value in ['True', True, 'yes', 'Yes', 1, '1']
         # Ensure unique person_number
         if not employee.person_number:
             while True:
