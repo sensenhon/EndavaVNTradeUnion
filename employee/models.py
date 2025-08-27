@@ -1,8 +1,36 @@
+# Model quản lý danh sách TU committee
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
 
 # Create your models here.
 # Các model động cho lựa chọn
+class TUCommittee(models.Model):
+	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tu_committees')
+
+	FLOOR_CHOICES = [
+		('1', '1'), ('2', '2'), ('3', '3'), ('4', '4'), ('5', '5'),
+		('6', '6'), ('7', '7'), ('9', '9'), ('10', '10'), ('11', '11'),
+		('Hanoi', 'Hanoi'), ('Club Administrator', 'Club Administrator'), ('Overall', 'Overall')
+	]
+	POSITION_CHOICES = [
+		('President', 'President'),
+		('Vice President', 'Vice President'),
+		('Standing Committee Member', 'Standing Committee Member'),
+		('Executive Committee Member', 'Executive Committee Member'),
+		('Head of the Inspection Committee', 'Head of the Inspection Committee'),
+		('Member of the Inspection Committee', 'Member of the Inspection Committee'),
+		('Trade Union Accountant', 'Trade Union Accountant'),
+		('Trade Union Treasurer', 'Trade Union Treasurer'),
+	]
+	position = models.CharField(max_length=50, choices=POSITION_CHOICES, blank=True)
+	email = models.EmailField(blank=True)
+	joined_at = models.DateField(null=True, blank=True)
+	responsible_floor = models.CharField(max_length=30, choices=FLOOR_CHOICES, blank=True)
+
+	def __str__(self):
+		return f"{self.user.username} - {self.position}"
+	
 class Discipline(models.Model):
 	name = models.CharField(max_length=50, unique=True)
 	def __str__(self):

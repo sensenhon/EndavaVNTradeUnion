@@ -1,0 +1,16 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+    <h2>Import Employees from Excel</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Upload & Import</button>
+    </form>
+    <div class="mt-3">
+        <strong>Excel columns required:</strong><br>
+        username, password, email, person_number, full_name_en, full_name_vn, dob, gender, discipline, job_title, floor, working_type, identity_number, native_place, ethnicity, religion, education_level, specialization, address, trade_union_member, membership_type_by_admin, membership_since, children<br>
+        <small>Children: JSON list hoặc tên, ngày sinh cách nhau bằng dấu phẩy.</small>
+    </div>
+</div>
+{% endblock %}

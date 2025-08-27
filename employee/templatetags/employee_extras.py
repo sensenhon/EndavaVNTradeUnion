@@ -1,4 +1,3 @@
-
 from django import template
 register = template.Library()
 
@@ -32,3 +31,7 @@ def get_field_display(obj, field_name):
     if callable(get_display):
         return get_display()
     return value
+
+@register.filter
+def dict_get(d, key):
+    return d.get(key, "-")

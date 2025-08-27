@@ -26,6 +26,12 @@
                     <option value="{{ f.name }}" {% if request.GET.floor == f.name %}selected{% endif %} style="color:rgba(33,37,41,0.7);">{{ f.name }}</option>
                 {% endfor %}
             </select>
+            <select name="tu_committee" class="form-select form-control-sm" style="color:rgba(33,37,41,0.6); border-color:rgba(33,37,41,0.3); background-color:rgba(255,255,255,0.95);">
+                <option value="" style="color:rgba(33,37,41,0.5);">All TU Committees</option>
+                {% for committee in tu_committees %}
+                    <option value="{{ committee.id }}" {% if request.GET.tu_committee == committee.id|stringformat:'s' %}selected{% endif %}>{{ committee.user.username }}</option>
+                {% endfor %}
+            </select>
             <select name="sort" class="form-select form-control-sm" style="color:rgba(33,37,41,0.6); border-color:rgba(33,37,41,0.3); background-color:rgba(255,255,255,0.95);">
                 <option value="">Sort by...</option>
                 {% for field, label in display_fields %}
@@ -38,7 +44,7 @@
         </form>
     </div>
 
-    <div style="overflow-x:auto; width:100%; margin-top:32px;">
+    <div style="overflow-x:auto; overflow-y:auto; max-height:450px; width:100%; margin-top:32px;">
         <table class="table table-bordered table-striped" style="background: #fff; min-width:1200px; width:100%;">
     <thead>
         <tr>
@@ -62,8 +68,9 @@
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:100px; max-width:180px; white-space:nowrap;">{{ label }}</th>
                 {% endif %}
             {% endfor %}
+            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">TUCommittee</th>
             <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
-            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:120px; white-space:nowrap;">History</th>
+            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:120px; white-space:nowrap;">Profile</th>
         </tr>
     </thead>
             <tbody>
@@ -137,6 +144,9 @@
                             </td>
                         {% endif %}
                     {% endfor %}
+                    <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ tu_committee_map|dict_get:emp.id }}
+                    </td>
                     <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         {% with children=emp.children.all %}
                             {% if children.count > 0 %}

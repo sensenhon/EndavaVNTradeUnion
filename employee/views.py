@@ -4,7 +4,7 @@ import pandas as pd
 from django.http import HttpResponse
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import user_passes_test
-from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children
+from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee
 from django.urls import reverse
 from django.contrib.auth import logout
 from django import forms
@@ -61,6 +61,23 @@ def committee_dashboard(request):
 		]
 		display_fields = [f for f in DISPLAY_FIELDS if f[0] not in hidden_fields]
 	employees = Employee.objects.all()
+	from .models import TUCommittee
+	tu_committees = TUCommittee.objects.all()
+	tu_committee_query = request.GET.get('tu_committee', '').strip()
+	if tu_committee_query:
+		# Lọc employee theo TUCommittee phụ trách
+		filtered_ids = []
+		for emp in employees:
+			committee = None
+			if str(emp.floor) == '0':
+				committee = TUCommittee.objects.filter(position='President').first()
+			else:
+				committee = TUCommittee.objects.filter(responsible_floor=str(emp.floor)).first()
+			if not committee:
+				committee = TUCommittee.objects.filter(position='Vice President').first()
+			if committee and str(committee.id) == tu_committee_query:
+				filtered_ids.append(emp.id)
+		employees = employees.filter(id__in=filtered_ids)
 	discipline_list = Discipline.objects.all().order_by('name')
 	floor_list = Floor.objects.all().order_by('name')
 	# Filtering
@@ -75,7 +92,7 @@ def committee_dashboard(request):
 	if discipline_query:
 		employees = employees.filter(discipline__name__icontains=discipline_query)
 	if floor_query:
-		employees = employees.filter(floor__name__icontains=floor_query)
+		employees = employees.filter(floor__name__iexact=floor_query)
 	if birth_month_query: 
 		employees = employees.filter(dob__month__in=birth_month_query) 
 	# Sorting
@@ -86,6 +103,24 @@ def committee_dashboard(request):
 		employees = employees.order_by('dob__month')
 	histories = EditHistory.objects.all().order_by('-edit_time')
 	is_committee = request.user.groups.filter(name='TU committee').exists()
+	# Map employee id to TUCommittee (user, email) by floor
+	tu_committee_map = {}
+	from .models import TUCommittee
+	for emp in employees:
+		committee = None
+		if str(emp.floor) == '0':
+			committee = TUCommittee.objects.filter(position='President').first()
+		else:
+			committee = TUCommittee.objects.filter(responsible_floor=str(emp.floor)).first()
+		if committee:
+			tu_committee_map[emp.id] = f"{committee.user.username} ({committee.email})"
+		else:
+			# Fallback: Vice President
+			vp = TUCommittee.objects.filter(position='Vice President').first()
+			if vp:
+				tu_committee_map[emp.id] = f"{vp.user.username} ({vp.email})"
+			else:
+				tu_committee_map[emp.id] = "-"
 	return render(request, 'employee/committee_dashboard.html', {
 		'employees': employees,
 		'histories': histories,
@@ -95,7 +130,10 @@ def committee_dashboard(request):
 		'birth_month_options': range(1, 13),
 		'selected_birth_month': birth_month_query,
 		'is_superuser': request.user.is_superuser,
-		'is_committee': is_committee
+		'is_committee': is_committee,
+		'tu_committee_map': tu_committee_map,
+		'tu_committees': tu_committees,
+		'selected_tu_committee': tu_committee_query
 	})
 
 # Export dashboard to Excel (filtered)
@@ -112,10 +150,22 @@ def export_dashboard_excel(request):
 	if discipline_query:
 		employees = employees.filter(discipline__name__icontains=discipline_query)
 	if floor_query:
-		employees = employees.filter(floor__name__icontains=floor_query)
+		employees = employees.filter(floor__name__iexact=floor_query)
 	if birth_month_query:
 		employees = employees.filter(dob__month__in=birth_month_query)
-	display_fields = DISPLAY_FIELDS
+	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+	# Các trường nhạy cảm chỉ export cho superuser
+	hidden_fields = [
+		'dob', 'identity_number', 'native_place', 'ethnicity', 'religion',
+		'education_level', 'specialization', 'address'
+	]
+	display_fields = [f for f in DISPLAY_FIELDS if is_superuser or f[0] not in hidden_fields]
+	extra_fields = [
+		('membership_type_by_admin', 'MembershipByTU'),
+		('membership_since', 'MembershipSince'),
+		('tu_committee', 'TUCommittee'),
+		('children', 'Children'),
+	]
 	valid_sort_fields = [f[0] for f in display_fields]
 	if sort_field and sort_field in valid_sort_fields:
 		employees = employees.order_by(sort_field)
@@ -140,10 +190,37 @@ def export_dashboard_excel(request):
 				row.append(emp.working_type.name if emp.working_type else '')
 			elif field == 'dob':
 				row.append(emp.dob.strftime('%Y-%m-%d') if emp.dob else '')
+			elif field == 'birth_month':
+				row.append(str(emp.dob.month) if emp.dob else '')
+			elif field == 'tu_committee':
+				# Nếu Employee có liên kết với TUCommittee, xuất tên committee
+				committee = getattr(emp, 'tu_committee', None)
+				if committee:
+					row.append(str(committee))
+				else:
+					row.append('')
 			else:
 				row.append(getattr(emp, field, ''))
+		# MembershipByTU
+		row.append(emp.membership_type_by_admin.name if hasattr(emp, 'membership_type_by_admin') and emp.membership_type_by_admin else '')
+		# MembershipSince
+		row.append(emp.membership_since.strftime('%Y-%m-%d') if hasattr(emp, 'membership_since') and emp.membership_since else '')
+		# TUCommittee
+		committee = getattr(emp, 'tu_committee', None)
+		if committee:
+			row.append(str(committee))
+		else:
+			# Nếu có map hoặc logic riêng, thay thế ở đây
+			row.append('')
+		# Children
+		children_list = emp.children.all() if hasattr(emp, 'children') else []
+		if children_list:
+			children_str = '; '.join([f"{child.name} ({child.dob})" for child in children_list])
+			row.append(children_str)
+		else:
+			row.append('')
 		data.append(row)
-	df = pd.DataFrame(data, columns=[label for field, label in display_fields])
+	df = pd.DataFrame(data, columns=[label for field, label in display_fields] + [label for field, label in extra_fields])
 	output = io.BytesIO()
 	with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
 		df.to_excel(writer, index=False, sheet_name='Dashboard')
@@ -429,6 +506,16 @@ def profile(request):
 	show_limited = False
 	if request.user.groups.filter(name='TU committee').exists() and emp_id and int(emp_id) != request.user.employee.id:
 		show_limited = True
+	# Tìm TU Committee theo floor
+	
+	committee = None
+	if employee.floor and str(employee.floor) == '0':
+		committee = TUCommittee.objects.filter(position='President').first()
+	elif employee.floor:
+		committee = TUCommittee.objects.filter(responsible_floor=str(employee.floor)).first()
+	if not committee:
+		committee = TUCommittee.objects.filter(position='Vice President').first()
+	tu_committee_display = f"{committee.user.username} - {committee.email}" if committee else "-"
 	context = {
 		'employee': employee,
 		'formset': formset,
@@ -438,6 +525,7 @@ def profile(request):
 		'is_committee': is_committee,
 		'show_limited': show_limited,
 		'hidden_fields': hidden_fields,
+		'tu_committee_display': tu_committee_display,
 	}
 	if is_superuser or is_committee:
 		context['membership_type_by_admin'] = employee.membership_type_by_admin if hasattr(employee, 'membership_type_by_admin') else None
