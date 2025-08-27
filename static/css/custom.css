@@ -1,0 +1,6 @@
+/* Làm nhỏ và in nghiêng help_text của Django form */
+.helptext {
+    font-size: 0.9em;
+    font-style: italic;
+    color: #666;
+}

@@ -25,7 +25,8 @@ class EmployeeRegisterForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-select'}),
         label='Membership By Admin'
     )
-    username = forms.CharField(max_length=150, required=True, help_text='Use to login', widget=forms.TextInput(attrs={'class': 'form-control'}))
+
+    # username = forms.CharField(max_length=150, required=True, help_text='Use to login', widget=forms.TextInput(attrs={'class': 'form-control'}))
     # ...existing code...
 
     def clean_username(self):
@@ -33,7 +34,8 @@ class EmployeeRegisterForm(forms.ModelForm):
         if username and User.objects.filter(username=username).exists():
             raise forms.ValidationError('Username đã tồn tại. Vui lòng chọn username khác.')
         return username
-    username = forms.CharField(max_length=150, required=True, help_text='Use to login', widget=forms.TextInput(attrs={'class': 'form-control'}))
+
+    username = forms.CharField(max_length=150, required=True, help_text='If your email is anh.nguyen@endava.com, enter username: anh.nguyen', widget=forms.TextInput(attrs={'class': 'form-control'}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}), required=True)
     email = forms.EmailField(required=True, help_text='Please fill Endava email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
     full_name_en = forms.CharField(max_length=100, required=True, label='Full name (EN)', widget=forms.TextInput(attrs={'class': 'form-control'}))
@@ -44,13 +46,13 @@ class EmployeeRegisterForm(forms.ModelForm):
     job_title = forms.ModelChoiceField(queryset=JobTitle.objects.all(), required=True, widget=forms.Select(attrs={'class': 'form-select'}))
     floor = forms.ModelChoiceField(queryset=Floor.objects.all(), required=True, widget=forms.Select(attrs={'class': 'form-select'}))
     working_type = forms.ModelChoiceField(queryset=WorkingType.objects.all(), required=True, widget=forms.Select(attrs={'class': 'form-select'}))
-    identity_number = forms.CharField(max_length=20, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    native_place = forms.CharField(max_length=100, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    ethnicity = forms.CharField(max_length=50, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    religion = forms.CharField(max_length=50, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    education_level = forms.CharField(max_length=100, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    specialization = forms.CharField(max_length=100, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    address = forms.CharField(max_length=200, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    identity_number = forms.CharField(max_length=20, required=True, help_text='This data can only be seen by the TU Chairperson', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    native_place = forms.CharField(max_length=100, required=True, help_text='This data can only be seen by the TU Chairperson', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    ethnicity = forms.CharField(max_length=50, required=True, help_text='This data can only be seen by the TU Chairperson', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    religion = forms.CharField(max_length=50, required=True, help_text='This data can only be seen by the TU Chairperson', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    education_level = forms.CharField(max_length=100, required=True, help_text='This data can only be seen by the TU Chairperson', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    specialization = forms.CharField(max_length=100, required=True, help_text='This data can only be seen by the TU Chairperson', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    address = forms.CharField(max_length=200, required=True, help_text='This data can only be seen by the TU Chairperson', widget=forms.TextInput(attrs={'class': 'form-control'}))
     TRADE_UNION_CHOICES = ((True, 'Yes'), (False, 'No'))
     trade_union_member = forms.ChoiceField(
         choices=TRADE_UNION_CHOICES,

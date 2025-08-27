@@ -549,12 +549,18 @@ def home(request):
 	return render(request, 'employee/home.html', {'is_superuser': is_superuser, 'is_committee': is_committee})
 
 def register(request):
+	class EmployeeRegisterFormNoMembership(EmployeeRegisterForm):
+		def __init__(self, *args, **kwargs):
+			super().__init__(*args, **kwargs)
+			self.fields.pop('membership_type_by_admin', None)
+			self.fields.pop('membership_since', None)
+
 	if request.method == 'POST':
-		form = EmployeeRegisterForm(request.POST)
+		form = EmployeeRegisterFormNoMembership(request.POST)
 		if form.is_valid():
 			form.save()
 			messages.success(request, 'Đăng ký thành công!')
 			return redirect('/home/')  # chuyển hướng tới trang Home
 	else:
-		form = EmployeeRegisterForm()
+		form = EmployeeRegisterFormNoMembership()
 	return render(request, 'employee/register.html', {'form': form})
