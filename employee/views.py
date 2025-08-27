@@ -1,28 +1,21 @@
 
 import io
 import pandas as pd
-from django.http import HttpResponse
-from django.contrib.auth.models import Group
-from django.contrib.auth.decorators import user_passes_test
-from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee
-from django.urls import reverse
-from django.contrib.auth import logout
+import datetime
 from django import forms
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib.auth import update_session_auth_hash
-from django.forms import modelformset_factory
-from django.forms import inlineformset_factory
-from .forms import EmployeeRegisterForm
-from django.forms import modelformset_factory
+from django.urls import reverse
 from django.utils.crypto import get_random_string
-from django.contrib.auth import authenticate, login as auth_login
 from django.http import JsonResponse
-from django.contrib.auth.models import User
-from .forms import EmployeeLoginForm
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .forms import EmployeeRegisterForm
+from django.http import HttpResponse
+from django.contrib.auth import logout, update_session_auth_hash, authenticate, login as auth_login
+from django.contrib.auth.models import Group, User
+from django.contrib.auth.decorators import user_passes_test, login_required
+from django.contrib.auth.forms import PasswordChangeForm
+from django.forms import modelformset_factory, inlineformset_factory, modelformset_factory
+from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee
+from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm
 
 # Dùng chung cho dashboard và export
 DISPLAY_FIELDS = [
@@ -61,7 +54,7 @@ def committee_dashboard(request):
 		]
 		display_fields = [f for f in DISPLAY_FIELDS if f[0] not in hidden_fields]
 	employees = Employee.objects.all()
-	from .models import TUCommittee
+	
 	tu_committees = TUCommittee.objects.all()
 	tu_committee_query = request.GET.get('tu_committee', '').strip()
 	if tu_committee_query:
@@ -105,7 +98,6 @@ def committee_dashboard(request):
 	is_committee = request.user.groups.filter(name='TU committee').exists()
 	# Map employee id to TUCommittee (user, email) by floor
 	tu_committee_map = {}
-	from .models import TUCommittee
 	for emp in employees:
 		committee = None
 		if str(emp.floor) == '0':
@@ -410,7 +402,6 @@ def edit_profile(request):
 					new_val = 'Yes' if new_val else 'No'
 				# Format Membership Since
 				if field == 'membership_since':
-					import datetime
 					def format_dt(dt):
 						if isinstance(dt, datetime.datetime):
 							return dt.strftime('%B, %Y')

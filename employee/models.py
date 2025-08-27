@@ -1,6 +1,7 @@
 # Model quản lý danh sách TU committee
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import User
 
 # Create your models here.
@@ -72,7 +73,6 @@ class Employee(models.Model):
 				self.membership_type_by_admin = default_type
 		# Tự động set membership_since nếu chưa có
 		if not self.membership_since:
-			from django.utils import timezone
 			self.membership_since = timezone.now()
 		super().save(*args, **kwargs)
 

@@ -1,10 +1,11 @@
 from django import forms
 from django.utils.crypto import get_random_string
+from django.contrib.auth.models import User
+from .models import Employee, Discipline, JobTitle, Floor, Gender, WorkingType, MembershipTypeByAdmin
+
 class EmployeeLoginForm(forms.Form):
     username = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}), label='Username')
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}), required=True, label='Password')
-from django.contrib.auth.models import User
-from .models import Employee, Discipline, JobTitle, Floor, Gender, WorkingType
 
 class EmployeeRegisterForm(forms.ModelForm):
     membership_since = forms.DateTimeField(
@@ -17,7 +18,7 @@ class EmployeeRegisterForm(forms.ModelForm):
         if value in ['True', True, 'yes', 'Yes', 1, '1']:
             return True
         return False
-    from .models import MembershipTypeByAdmin
+    
     membership_type_by_admin = forms.ModelChoiceField(
         queryset=MembershipTypeByAdmin.objects.all(),
         required=False,

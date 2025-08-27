@@ -1,6 +1,7 @@
 import pandas as pd
 from django.contrib import admin
 from django import forms
+from django.shortcuts import render
 from django.contrib.auth.models import User
 from .models import Employee, Children, Discipline, Floor, Gender, JobTitle, WorkingType, MembershipTypeByAdmin
 
@@ -92,8 +93,4 @@ class EmployeeImportAdmin(admin.ModelAdmin):
                 self.message_user(request, msg)
         else:
             form = EmployeeImportForm()
-        from django.shortcuts import render
         return render(request, "admin/employee_import.html", {"form": form})
-
-# To use: register EmployeeImportAdmin in admin.py
-# admin.site.register(Employee, EmployeeImportAdmin)

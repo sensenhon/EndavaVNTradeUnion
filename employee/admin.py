@@ -3,8 +3,6 @@ from .models import (
     Employee, Children, Discipline, JobTitle, Floor,
     Gender, WorkingType, EditHistory, MembershipTypeByAdmin, TUCommittee
 )
-
-# Import EmployeeImportAdmin for Excel import
 from .admin_import import EmployeeImportAdmin
 
 # admin.site.register(Employee)

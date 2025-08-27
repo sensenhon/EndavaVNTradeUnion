@@ -2,10 +2,10 @@ import pandas as pd
 import json
 import django
 import os
+from employee.models import Employee, Children
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 django.setup()
-
-from employee.models import Employee, Children
 
 # Đường dẫn file Excel
 excel_path = 'C:\\Users\\sshon\\OneDrive - ENDAVA\\1. Trade Union\\ImportTUMembershipListChildrenFinal.xlsx'  # Đổi thành tên file của bạn
