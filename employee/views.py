@@ -81,7 +81,11 @@ def committee_dashboard(request):
 	sort_field = request.GET.get('sort', '')
 	birth_month_query = [m for m in birth_month_query if m]
 	if name_query:
-		employees = employees.filter(full_name_en__icontains=name_query)
+		employees = employees.filter(
+			full_name_en__icontains=name_query
+		) | employees.filter(
+			user__username__icontains=name_query
+		)
 	if discipline_query:
 		employees = employees.filter(discipline__name__icontains=discipline_query)
 	if floor_query:
