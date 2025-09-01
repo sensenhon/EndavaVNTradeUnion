@@ -165,5 +165,332 @@
                 {% endfor %}
             </tbody>
         </table>
-    {# Ẩn phần lịch sử dưới bảng #}
+        {# Ẩn phần lịch sử dưới bảng #}
+        <!-- Kết thúc bảng employee, bắt đầu bảng newcomer ở section riêng -->
+        </div>
+
+        {% if newcomers and newcomers.count > 0 %}
+            <h4 class="mt-5 mb-3" style="margin-top:64px;">Newcomers</h4>
+            <div style="overflow-x:auto; overflow-y:auto; max-height:450px; width:100%;">
+                <table class="table table-bordered table-striped" style="background: #fff; min-width:1200px; width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
+                            {% for field, label in display_fields %}
+                                {% if field == 'trade_union_member' %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">MembershipByTU</th>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:180px; white-space:nowrap;">MembershipSince</th>
+                        {% elif field == 'person_number' %}
+                            {# Bỏ qua cột person_number vì đã có cột No. #}
+                        {% elif field == 'floor' %}
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:30px; max-width:50px; white-space:nowrap;">{{ label }}</th>
+                        {% elif field == 'gender' %}
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:30px; max-width:50px; white-space:nowrap;">{{ label }}</th>
+                        {% elif field == 'ethnicity' %}
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:90px; white-space:nowrap;">{{ label }}</th>
+                        {% elif field == 'religion' %}
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">{{ label }}</th>
+                        {% else %}
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:100px; max-width:180px; white-space:nowrap;">{{ label }}</th>
+                        {% endif %}
+                    {% endfor %}
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">TUCommittee</th>
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:120px; white-space:nowrap;">Profile</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in newcomers %}
+                <tr>
+                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
+                    {% for field, label in display_fields %}
+                        {# ...existing field rendering logic... #}
+                        {% if field == 'trade_union_member' %}
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if emp.trade_union_member %}Yes{% else %}No{% endif %}
+                            </td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if emp.membership_type_by_admin %}{{ emp.membership_type_by_admin.name }}{% else %}-{% endif %}
+                            </td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% if emp.membership_since %}{{ emp.membership_since|date:'F jS, Y' }}{% else %}-{% endif %}
+                            </td>
+                        {% elif field == 'person_number' %}
+                            {# Bỏ qua cột person_number vì đã có cột No. #}
+                        {% elif field == 'floor' or field == 'gender' or field == 'ethnicity' or field == 'religion' or field == 'identity_number' or field == 'birth_month' %}
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {{ emp|get_field_display:field }}
+                            </td>
+                        {% else %}
+                            <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {{ emp|get_field_display:field }}
+                            </td>
+                        {% endif %}
+                    {% endfor %}
+                    <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ tu_committee_map_newcomers|dict_get:emp.id }}
+                    </td>
+                    <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {% with children=emp.children.all %}
+                            {% if children.count > 0 %}
+                                {% for child in children %}
+                                    {{ child.name }} ({{ child.dob }})<br>
+                                {% endfor %}
+                            {% else %}
+                                No children
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">
+                        <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-outline-info">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if maternity and maternity.count > 0 %}
+            <h4 class="mt-5 mb-3" style="margin-top:64px;">Maternity Leave</h4>
+            <div style="overflow-x:auto; overflow-y:auto; max-height:450px; width:100%;">
+                <table class="table table-bordered table-striped" style="background: #fff; min-width:1200px; width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
+                            {% for field, label in display_fields %}
+                                {% if field == 'trade_union_member' %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">MembershipByTU</th>
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:180px; white-space:nowrap;">MembershipSince</th>
+                                {% elif field == 'person_number' %}
+                                    {# Bỏ qua cột person_number vì đã có cột No. #}
+                                {% elif field == 'floor' or field == 'gender' or field == 'ethnicity' or field == 'religion' or field == 'identity_number' or field == 'birth_month' %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:90px; white-space:nowrap;">{{ label }}</th>
+                                {% else %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:100px; max-width:180px; white-space:nowrap;">{{ label }}</th>
+                                {% endif %}
+                            {% endfor %}
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">TUCommittee</th>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:120px; white-space:nowrap;">Profile</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in maternity %}
+                        <tr>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
+                            {% for field, label in display_fields %}
+                                {% if field == 'trade_union_member' %}
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{% if emp.trade_union_member %}Yes{% else %}No{% endif %}</td>
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{% if emp.membership_type_by_admin %}{{ emp.membership_type_by_admin.name }}{% else %}-{% endif %}</td>
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{% if emp.membership_since %}{{ emp.membership_since|date:'F jS, Y' }}{% else %}-{% endif %}</td>
+                                {% elif field == 'person_number' %}
+                                    {# Bỏ qua cột person_number vì đã có cột No. #}
+                                {% elif field == 'floor' or field == 'gender' or field == 'ethnicity' or field == 'religion' or field == 'identity_number' or field == 'birth_month' %}
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ emp|get_field_display:field }}</td>
+                                {% else %}
+                                    <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ emp|get_field_display:field }}</td>
+                                {% endif %}
+                            {% endfor %}
+                            <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ tu_committee_map|dict_get:emp.id }}</td>
+                            <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% with children=emp.children.all %}
+                                    {% if children.count > 0 %}
+                                        {% for child in children %}{{ child.name }} ({{ child.dob }})<br>{% endfor %}
+                                    {% else %}No children{% endif %}
+                                {% endwith %}
+                            </td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;"><a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-outline-info">View</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% if military and military.count > 0 %}
+            <h4 class="mt-5 mb-3" style="margin-top:64px;">Military Leave</h4>
+            <div style="overflow-x:auto; overflow-y:auto; max-height:450px; width:100%;">
+                <table class="table table-bordered table-striped" style="background: #fff; min-width:1200px; width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
+                            {% for field, label in display_fields %}
+                                {% if field == 'trade_union_member' %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">MembershipByTU</th>
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:180px; white-space:nowrap;">MembershipSince</th>
+                                {% elif field == 'person_number' %}
+                                    {# Bỏ qua cột person_number vì đã có cột No. #}
+                                {% elif field == 'floor' or field == 'gender' or field == 'ethnicity' or field == 'religion' or field == 'identity_number' or field == 'birth_month' %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:90px; white-space:nowrap;">{{ label }}</th>
+                                {% else %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:100px; max-width:180px; white-space:nowrap;">{{ label }}</th>
+                                {% endif %}
+                            {% endfor %}
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">TUCommittee</th>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:120px; white-space:nowrap;">Profile</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in military %}
+                        <tr>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
+                            {% for field, label in display_fields %}
+                                {% if field == 'trade_union_member' %}
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{% if emp.trade_union_member %}Yes{% else %}No{% endif %}</td>
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{% if emp.membership_type_by_admin %}{{ emp.membership_type_by_admin.name }}{% else %}-{% endif %}</td>
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{% if emp.membership_since %}{{ emp.membership_since|date:'F jS, Y' }}{% else %}-{% endif %}</td>
+                                {% elif field == 'person_number' %}
+                                    {# Bỏ qua cột person_number vì đã có cột No. #}
+                                {% elif field == 'floor' or field == 'gender' or field == 'ethnicity' or field == 'religion' or field == 'identity_number' or field == 'birth_month' %}
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ emp|get_field_display:field }}</td>
+                                {% else %}
+                                    <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ emp|get_field_display:field }}</td>
+                                {% endif %}
+                            {% endfor %}
+                            <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ tu_committee_map|dict_get:emp.id }}</td>
+                            <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% with children=emp.children.all %}
+                                    {% if children.count > 0 %}
+                                        {% for child in children %}{{ child.name }} ({{ child.dob }})<br>{% endfor %}
+                                    {% else %}No children{% endif %}
+                                {% endwith %}
+                            </td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;"><a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-outline-info">View</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% if withdrawn_resignation and withdrawn_resignation.count > 0 %}
+            <h4 class="mt-5 mb-3" style="margin-top:64px;">Withdrawn & Resignation</h4>
+            <div style="overflow-x:auto; overflow-y:auto; max-height:450px; width:100%;">
+                <table class="table table-bordered table-striped" style="background: #fff; min-width:1200px; width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
+                            {% for field, label in display_fields %}
+                                {% if field == 'trade_union_member' %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">MembershipByTU</th>
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:180px; white-space:nowrap;">MembershipSince</th>
+                                {% elif field == 'person_number' %}
+                                    {# Bỏ qua cột person_number vì đã có cột No. #}
+                                {% elif field == 'floor' %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:30px; max-width:50px; white-space:nowrap;">{{ label }}</th>
+                                {% elif field == 'gender' %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:30px; max-width:50px; white-space:nowrap;">{{ label }}</th>
+                                {% elif field == 'ethnicity' %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:90px; white-space:nowrap;">{{ label }}</th>
+                                {% elif field == 'religion' %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">{{ label }}</th>
+                                {% else %}
+                                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:100px; max-width:180px; white-space:nowrap;">{{ label }}</th>
+                                {% endif %}
+                            {% endfor %}
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">TUCommittee</th>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:60px; max-width:120px; white-space:nowrap;">Profile</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in withdrawn_resignation %}
+                        <tr>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
+                            {% for field, label in display_fields %}
+                                {% if field == 'trade_union_member' %}
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        {% if emp.trade_union_member %}Yes{% else %}No{% endif %}
+                                    </td>
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        {% if emp.membership_type_by_admin %}{{ emp.membership_type_by_admin.name }}{% else %}-{% endif %}
+                                    </td>
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        {% if emp.membership_since %}{{ emp.membership_since|date:'F jS, Y' }}{% else %}-{% endif %}
+                                    </td>
+                                {% elif field == 'person_number' %}
+                                    {# Bỏ qua cột person_number vì đã có cột No. #}
+                                {% elif field == 'floor' %}
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:50px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        {% if field == 'user' %}
+                                            {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                        {% else %}
+                                            {{ emp|get_field_display:field }}
+                                        {% endif %}
+                                    </td>
+                                {% elif field == 'gender' %}
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:50px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        {% if field == 'user' %}
+                                            {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                        {% else %}
+                                            {{ emp|get_field_display:field }}
+                                        {% endif %}
+                                    </td>
+                                {% elif field == 'ethnicity' %}
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        {% if field == 'user' %}
+                                            {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                        {% else %}
+                                            {{ emp|get_field_display:field }}
+                                        {% endif %}
+                                    </td>
+                                {% elif field == 'religion' %}
+                                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        {% if field == 'user' %}
+                                            {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                        {% else %}
+                                            {{ emp|get_field_display:field }}
+                                        {% endif %}
+                                    </td>
+                                {% elif field == 'identity_number' %}
+                                    <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:100px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        {% if field == 'user' %}
+                                            {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                        {% else %}
+                                            {{ emp|get_field_display:field }}
+                                        {% endif %}
+                                    </td>
+                                {% elif field == 'birth_month' %}
+                                    <td style="text-align:center; padding:6px 2px; vertical-align:middle; font-size:0.75em; width:32px; max-width:32px; min-width:32px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        {% if emp.dob %}{{ emp.dob|date:'n' }}{% else %}-{% endif %}
+                                    </td>
+                                {% else %}
+                                    <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        {% if field == 'user' %}
+                                            {% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}
+                                        {% else %}
+                                            {{ emp|get_field_display:field }}
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
+                            {% endfor %}
+                            <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {{ tu_committee_map|dict_get:emp.id }}
+                            </td>
+                            <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {% with children=emp.children.all %}
+                                    {% if children.count > 0 %}
+                                        {% for child in children %}
+                                            {{ child.name }} ({{ child.dob }})<br>
+                                        {% endfor %}
+                                    {% else %}
+                                        No children
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">
+                                <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-outline-info">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
 {% endblock %}

@@ -16,6 +16,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.forms import modelformset_factory, inlineformset_factory, modelformset_factory
 from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee
 from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm
+from django.db.models import Q
 
 # Dùng chung cho dashboard và export
 DISPLAY_FIELDS = [
@@ -54,6 +55,20 @@ def committee_dashboard(request):
 		]
 		display_fields = [f for f in DISPLAY_FIELDS if f[0] not in hidden_fields]
 	employees = Employee.objects.all()
+	newcomers = employees.filter(membership_type_by_admin__name__icontains="newcomer")
+	withdrawn_resignation = employees.filter(
+		Q(membership_type_by_admin__name__icontains="withdrawn") |
+		Q(membership_type_by_admin__name__icontains="resignation")
+	)
+	maternity = employees.filter(membership_type_by_admin__name__icontains="maternity")
+	military = employees.filter(membership_type_by_admin__name__icontains="military")
+	employees = employees.exclude(membership_type_by_admin__name__icontains="newcomer")
+	employees = employees.exclude(
+		Q(membership_type_by_admin__name__icontains="withdrawn") |
+		Q(membership_type_by_admin__name__icontains="resignation") |
+		Q(membership_type_by_admin__name__icontains="maternity") |
+		Q(membership_type_by_admin__name__icontains="military")
+	)
 	
 	tu_committees = TUCommittee.objects.all()
 	tu_committee_query = request.GET.get('tu_committee', '').strip()
@@ -100,14 +115,14 @@ def committee_dashboard(request):
 		employees = employees.order_by('dob__month')
 	histories = EditHistory.objects.all().order_by('-edit_time')
 	is_committee = request.user.groups.filter(name='TU committee').exists()
-	# Map employee id to TUCommittee (user, email) by floor
+	# Map employee id to TUCommittee (user, email) by floor for main employees
 	tu_committee_map = {}
 	for emp in employees:
 		committee = None
-		if str(emp.floor) == '0':
+		if emp.floor and emp.floor.name == '0':
 			committee = TUCommittee.objects.filter(position='President').first()
 		else:
-			committee = TUCommittee.objects.filter(responsible_floor=str(emp.floor)).first()
+			committee = TUCommittee.objects.filter(responsible_floor=emp.floor.name if emp.floor else '').first()
 		if committee:
 			tu_committee_map[emp.id] = f"{committee.user.username} ({committee.email})"
 		else:
@@ -117,8 +132,21 @@ def committee_dashboard(request):
 				tu_committee_map[emp.id] = f"{vp.user.username} ({vp.email})"
 			else:
 				tu_committee_map[emp.id] = "-"
+
+	# Map TUCommittee for Newcomers: always assign President
+	tu_committee_map_newcomers = {}
+	president = TUCommittee.objects.filter(position='President').first()
+	for emp in newcomers:
+		if president:
+			tu_committee_map_newcomers[emp.id] = f"{president.user.username} ({president.email})"
+		else:
+			tu_committee_map_newcomers[emp.id] = "-"
 	return render(request, 'employee/committee_dashboard.html', {
 		'employees': employees,
+		'newcomers': newcomers,
+		'withdrawn_resignation': withdrawn_resignation,
+		'maternity': maternity,
+		'military': military,
 		'histories': histories,
 		'display_fields': display_fields,
 		'discipline_list': discipline_list,
@@ -128,6 +156,7 @@ def committee_dashboard(request):
 		'is_superuser': request.user.is_superuser,
 		'is_committee': is_committee,
 		'tu_committee_map': tu_committee_map,
+		'tu_committee_map_newcomers': tu_committee_map_newcomers,
 		'tu_committees': tu_committees,
 		'selected_tu_committee': tu_committee_query
 	})
