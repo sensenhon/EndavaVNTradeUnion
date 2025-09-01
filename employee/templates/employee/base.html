@@ -27,9 +27,6 @@
                     <li class="nav-item">
                         <a class="btn btn-info" href="{% url 'profile' %}">Profile</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="btn btn-danger" style="margin-left: 10px;" href="{% url 'logout' %}">Logout</a>
-                    </li>
                     {% if is_superuser or is_pot %}
                         <li class="nav-item">
                             <a class="btn btn-warning" style="margin-left: 10px;" href="{% url 'tu_pot' %}">TU-POT</a>
@@ -40,6 +37,9 @@
                             <a class="btn btn-info" style="margin-left: 10px;" href="{% url 'committee_dashboard' %}">Committee Dashboard</a>
                         </li>
                     {% endif %}
+                    <li class="nav-item">
+                        <a class="btn btn-danger" style="margin-left: 10px;" href="{% url 'logout' %}">Logout</a>
+                    </li>
                 {% else %}
                     <li class="nav-item">
                         <a class="btn btn-success" href="/register/">Register</a>
