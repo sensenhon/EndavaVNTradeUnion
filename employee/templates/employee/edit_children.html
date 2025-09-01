@@ -1,6 +1,6 @@
 {% extends 'employee/base.html' %}
 {% block content %}
-<div class="container mt-5" style="max-width: 700px;">
+<div class="container mt-5 page-content" style="max-width: 700px;">
     <h2 class="text-center my-5">Edit Children Information</h2>
     <form method="post" action="{% url 'edit_children' %}" class="border p-4 rounded bg-light shadow">
         {% csrf_token %}

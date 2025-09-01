@@ -1,4 +1,3 @@
-
 import io
 import pandas as pd
 import datetime
@@ -158,7 +157,8 @@ def committee_dashboard(request):
 		'tu_committee_map': tu_committee_map,
 		'tu_committee_map_newcomers': tu_committee_map_newcomers,
 		'tu_committees': tu_committees,
-		'selected_tu_committee': tu_committee_query
+		'selected_tu_committee': tu_committee_query,
+		'is_pot': request.user.groups.filter(name='pot').exists() if request.user.is_authenticated else False
 	})
 
 # Export dashboard to Excel (filtered)
@@ -579,7 +579,8 @@ def check_username(request):
 def home(request):
 	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
 	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
-	return render(request, 'employee/home.html', {'is_superuser': is_superuser, 'is_committee': is_committee})
+	is_pot = request.user.groups.filter(name='pot').exists() if request.user.is_authenticated else False
+	return render(request, 'employee/home.html', {'is_superuser': is_superuser, 'is_committee': is_committee, 'is_pot': is_pot})
 
 def register(request):
 	class EmployeeRegisterFormNoMembership(EmployeeRegisterForm):

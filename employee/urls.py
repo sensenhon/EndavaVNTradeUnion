@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import committee_dashboard
-from . import views
+from . import views, views_tupot
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -14,4 +14,5 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('committee-dashboard/', committee_dashboard, name='committee_dashboard'),
     path('committee-dashboard/export-excel/', views.export_dashboard_excel, name='export_dashboard_excel'),
+    path('tu-pot/', views_tupot.tu_pot, name='tu_pot'),
 ]

@@ -1,7 +1,7 @@
 {% extends 'employee/base.html' %}
 {% block title %}Login - Endava VN Trade Union{% endblock %}
 {% block content %}
-<div class="container mt-5" style="max-width: 400px;">
+<div class="container mt-5 page-content" style="max-width: 400px;">
     <h2 class="text-center my-5">Login</h2>
     <form method="post" action="/login/" class="border p-4 rounded bg-light shadow">
         {% csrf_token %}

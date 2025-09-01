@@ -1,0 +1,104 @@
+{% extends 'employee/base.html' %}
+{% block content %}
+<div class="container mt-5 page-content">
+    <h2 class="text-center" style="margin-bottom:24px;">Administration Work</h2>
+    <h4 class="mt-5 mb-3" style="margin-top:64px;">Upload Employee Excel</h4>
+    <div class="alert alert-info mt-3" style="font-size: 0.95em;">
+        <b>File Format:</b> <span style="font-size: 0.95em; color: #555;">No. | Person Number | Local Name | Status | Date of Joining | End date of Probation | Date of Leaving | Employment Type | Primary Email | Note</span>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="mb-4">
+        {% csrf_token %}
+        <div class="form-group mb-0" style="max-width: 580px; margin-bottom: 0;">
+            <div class="input-group mt-1" style="align-items: center;">
+                <input type="file" name="excel_file" id="excel_file" class="form-control" required style="border-radius: 6px 0 0 6px; height: 40px; padding: 6px 6px;">
+                <button type="submit" class="btn btn-primary" style="border-radius: 0 6px 6px 0; min-width: 140px; height: 40px;">Upload & Export</button>
+            </div>
+        </div>
+    </form>
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    {% if is_superuser %}
+        {% if pot_download_url and pot_export_time %}
+            <div class="alert alert-success mt-3" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: #e9f7ef; border: 1px solid #b2dfdb; padding: 16px;">
+                <div style="font-weight: bold; color: #00796b; margin-bottom: 8px;">Membership File</div>
+                <div><b>Filled with "Yes" if the employee is TU member</b>{{ pot_export_time|date:'d/m/Y H:i:s' }}</div>
+                <a href="{{ pot_download_url }}" class="btn btn-success mt-2">Download Membership</a>
+            </div>
+        {% endif %}
+        {% if tu_download_url and tu_export_time %}
+            <div class="alert alert-info mt-3" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: #e3f2fd; border: 1px solid #90caf9; padding: 16px;">
+                <div style="font-weight: bold; color: #1976d2; margin-bottom: 8px;">Newcomer File</div>
+                <div><b>Employees are in POT list but not exists in TU list</b>{{ tu_export_time|date:'d/m/Y H:i:s' }}</div>
+                <a href="{{ tu_download_url }}" class="btn btn-info mt-2">Download Newcomer</a>
+            </div>
+        {% endif %}
+        {% if tu_missing_download_url %}
+            <div class="alert alert-warning mt-3" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: #fffde7; border: 1px solid #ffe082; padding: 16px;">
+                <div style="font-weight: bold; color: #f57c00; margin-bottom: 8px;">Resigned File</div>
+                <div><b>Employees are not in POT list but still exists in TU list</b></div>
+                <a href="{{ tu_missing_download_url }}" class="btn btn-warning mt-2">Download Resigned</a>
+            </div>
+        {% endif %}
+        {% if tu_resign_download_url %}
+            <div class="alert alert-danger mt-3" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: #ffebee; border: 1px solid #ffcdd2; padding: 16px;">
+                <div style="font-weight: bold; color: #c62828; margin-bottom: 8px;">Resign File</div>
+                <div><b>Employees are about to resign</b></div>
+                <a href="{{ tu_resign_download_url }}" class="btn btn-danger mt-2">Download Resign</a>
+            </div>
+        {% endif %}
+    {% elif is_pot %}
+        {% if pot_download_url and pot_export_time %}
+            <div class="alert alert-success mt-3" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: #e9f7ef; border: 1px solid #b2dfdb; padding: 16px;">
+                <div style="font-weight: bold; color: #00796b; margin-bottom: 8px;">Membership File</div>
+                <div><b>Filled with "Yes" if the employee is TU member</b>{{ pot_export_time|date:'d/m/Y H:i:s' }}</div>
+                <a href="{{ pot_download_url }}" class="btn btn-success mt-2">Download Membership</a>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    <!-- History -->
+    {% if is_superuser %}
+        <div class="mt-4" style="max-height: 200px; overflow-y: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: #f8f9fa; border: 1px solid #e3e3e3;">
+            <div style="position: sticky; top: 0; background: #f8f9fa; z-index: 2; padding: 8px 16px; border-bottom: 1px solid #e3e3e3; font-weight: bold;">History</div>
+            <div style="padding: 8px 16px;">
+            {% if history %}
+                <ul class="mb-2" style="padding-left: 18px; margin-bottom: 0;">
+                {% for h in history %}
+                    <li style="margin-bottom: 6px;">
+                        <span style="font-weight: 500; color: #333;">{{ h.export_time|date:'d/m/Y H:i:s' }}</span>
+                        - <a href="/media/tu_pot_exports/{{ h.filename }}" target="_blank" style="color: #007bff; text-decoration: underline;">{{ h.filename }}</a>
+                        {% if h.user %}<span class="text-muted">by {{ h.user.username }}</span>{% endif %}
+                    </li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <span class="text-muted">No export history yet.</span>
+            {% endif %}
+            {% if download_url and export_time %}
+                <a href="{{ download_url }}" class="btn btn-success mt-2">Download Latest Exported File</a>
+            {% endif %}
+            </div>
+        </div>
+    {% elif is_pot %}
+        <div class="mt-4" style="max-height: 200px; overflow-y: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: #f8f9fa; border: 1px solid #e3e3e3;">
+            <div style="position: sticky; top: 0; background: #f8f9fa; z-index: 2; padding: 8px 16px; border-bottom: 1px solid #e3e3e3; font-weight: bold;">Membership Export History</div>
+            <div style="padding: 8px 16px;">
+                {% if membership_history %}
+                    <ul class="mb-2" style="padding-left: 18px; margin-bottom: 0;">
+                    {% for h in membership_history %}
+                        <li style="margin-bottom: 6px;">
+                            <span style="font-weight: 500; color: #333;">{{ h.export_time|date:'d/m/Y H:i:s' }}</span>
+                            - <a href="/media/tu_pot_exports/{{ h.filename }}" target="_blank" style="color: #007bff; text-decoration: underline;">{{ h.filename }}</a>
+                            {% if h.user %}<span class="text-muted">by {{ h.user.username }}</span>{% endif %}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <span class="text-muted">No membership export history yet.</span>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
