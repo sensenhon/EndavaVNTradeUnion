@@ -153,7 +153,7 @@ def tu_pot(request):
     if export_filename:
         download_url = f"/media/tu_pot_exports/{export_filename}"
     # Get history for display
-    history = TUPOTExportHistory.objects.order_by('-export_time')[:20]
+    history = TUPOTExportHistory.objects.order_by('-export_time')
     membership_history = TUPOTExportHistory.objects.filter(filename__startswith='tu_pot_membership').order_by('-export_time')
     # Get POT download info from session (after redirect)
     pot_download_url = request.session.pop('pot_download_url', None)

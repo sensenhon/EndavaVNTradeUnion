@@ -53,21 +53,67 @@ def committee_dashboard(request):
 			'identity_number', 'native_place', 'job_title', 'ethnicity', 'religion', 'education_level', 'specialization', 'address', 'dob'
 		]
 		display_fields = [f for f in DISPLAY_FIELDS if f[0] not in hidden_fields]
+
+	# Query all employees data
 	employees = Employee.objects.all()
-	newcomers = employees.filter(membership_type_by_admin__name__icontains="newcomer")
-	withdrawn_resignation = employees.filter(
+	newcomers = Employee.objects.filter(membership_type_by_admin__name__icontains="newcomer")
+	name_query_newcomer = request.GET.get('name', '').strip()
+	if name_query_newcomer:
+		newcomers = newcomers.filter(
+			Q(full_name_en__icontains=name_query_newcomer) |
+			Q(user__username__icontains=name_query_newcomer)
+		)
+
+	# Query all employees with "withdrawn" or "no" and create filter
+	withdrawn_no = Employee.objects.filter(
 		Q(membership_type_by_admin__name__icontains="withdrawn") |
-		Q(membership_type_by_admin__name__icontains="resignation")
+		Q(membership_type_by_admin__name__icontains="no")
 	)
-	maternity = employees.filter(membership_type_by_admin__name__icontains="maternity")
-	military = employees.filter(membership_type_by_admin__name__icontains="military")
-	employees = employees.exclude(membership_type_by_admin__name__icontains="newcomer")
+	name_query_withdrawn_no = request.GET.get('name', '').strip()
+	if name_query_withdrawn_no:
+		withdrawn_no = withdrawn_no.filter(
+			Q(full_name_en__icontains=name_query_withdrawn_no) |
+			Q(user__username__icontains=name_query_withdrawn_no)
+		)
+
+	# Query all employees with "resignation" and create filter
+	resignation = Employee.objects.filter(membership_type_by_admin__name__icontains="resignation")
+	name_query_resignation = request.GET.get('name', '').strip()
+	if name_query_resignation:
+		resignation = resignation.filter(
+			Q(full_name_en__icontains=name_query_resignation) |
+			Q(user__username__icontains=name_query_resignation)
+		)
+	
+	# Query all employees with "maternity" and create filter
+	maternity = Employee.objects.filter(membership_type_by_admin__name__icontains="maternity")
+	name_query_maternity = request.GET.get('name', '').strip()
+	if name_query_maternity:
+		maternity = maternity.filter(
+			Q(full_name_en__icontains=name_query_maternity) |
+			Q(user__username__icontains=name_query_maternity)
+		)
+
+	# Query all employees with "military" and create filter
+	military = Employee.objects.filter(membership_type_by_admin__name__icontains="military")
+	name_query_military = request.GET.get('name', '').strip()
+	if name_query_military:
+		military = military.filter(
+			Q(full_name_en__icontains=name_query_military) |
+			Q(user__username__icontains=name_query_military)
+		)
+
+	# Exclude the employees with above membership types
 	employees = employees.exclude(
+		Q(membership_type_by_admin__name__icontains="newcomer") |
 		Q(membership_type_by_admin__name__icontains="withdrawn") |
 		Q(membership_type_by_admin__name__icontains="resignation") |
 		Q(membership_type_by_admin__name__icontains="maternity") |
 		Q(membership_type_by_admin__name__icontains="military")
 	)
+
+	# Employee list with "YES"
+	employees = employees.filter(membership_type_by_admin__name__iexact="Yes")
 	
 	tu_committees = TUCommittee.objects.all()
 	tu_committee_query = request.GET.get('tu_committee', '').strip()
@@ -143,7 +189,8 @@ def committee_dashboard(request):
 	return render(request, 'employee/committee_dashboard.html', {
 		'employees': employees,
 		'newcomers': newcomers,
-		'withdrawn_resignation': withdrawn_resignation,
+		'withdrawn_no': withdrawn_no,
+		'resignation': resignation,
 		'maternity': maternity,
 		'military': military,
 		'histories': histories,
@@ -179,7 +226,7 @@ def export_dashboard_excel(request):
 	if birth_month_query:
 		employees = employees.filter(dob__month__in=birth_month_query)
 	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
-	# Các trường nhạy cảm chỉ export cho superuser
+	# only for superuser
 	hidden_fields = [
 		'dob', 'identity_number', 'native_place', 'ethnicity', 'religion',
 		'education_level', 'specialization', 'address'
