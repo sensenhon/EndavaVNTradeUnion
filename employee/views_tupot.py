@@ -7,6 +7,7 @@ from openpyxl import load_workbook
 from django.utils import timezone
 from .models_tupot import TUPOTExportHistory
 import random, string
+from datetime import datetime
 
 def is_superuser_or_pot(user):
     return user.is_superuser or user.groups.filter(name='pot').exists()
@@ -91,8 +92,9 @@ def tu_pot(request):
                         else:
                             membership_type = 'Newcomer (Month)'
                             membership_since = ''
+                        dob_value = ''
                         out_ws.append([
-                            username, password, email, person_number, full_name_vn, full_name_vn, '1/1/1900', 'No Data', 'No Data', 'No Data',
+                            username, password, email, person_number, full_name_vn, full_name_vn, dob_value, 'No Data', 'No Data', 'No Data',
                             0, 'No Data', person_number, 'No Data', 'No Data', 'No Data', 'No Data', 'No Data',
                             'No Data', 'No', membership_type, membership_since, '[]'
                         ])
@@ -122,7 +124,7 @@ def tu_pot(request):
                     if emp_email not in uploaded_emails:
                         info = extra_info_map.get(emp_email, '')
                         missing_ws.append([emp_email, info])
-                missing_filename = f"tu_pot_missing_{tu_export_time.strftime('%Y%m%d_%H%M%S')}.xlsx"
+                missing_filename = f"tu_pot_resigned_{tu_export_time.strftime('%Y%m%d_%H%M%S')}.xlsx"
                 missing_path = f"media/tu_pot_exports/{missing_filename}"
                 missing_wb.save(missing_path)
                 request.session['tu_missing_download_url'] = f"/media/tu_pot_exports/{missing_filename}"
@@ -136,7 +138,7 @@ def tu_pot(request):
                     extra_info = str(row[6].value).strip() if row[6].value else ''
                     if email and extra_info:
                         resign_ws.append([email, extra_info])
-                resign_filename = f"tu_pot_resign_{tu_export_time.strftime('%Y%m%d_%H%M%S')}.xlsx"
+                resign_filename = f"tu_pot_resigning_{tu_export_time.strftime('%Y%m%d_%H%M%S')}.xlsx"
                 resign_path = f"media/tu_pot_exports/{resign_filename}"
                 resign_wb.save(resign_path)
                 request.session['tu_resign_download_url'] = f"/media/tu_pot_exports/{resign_filename}"

@@ -1,11 +1,11 @@
 {% extends 'employee/base.html' %}
 {% load employee_extras %}
 {% block content %}
-<h2 class="text-center" style="margin-bottom:0px; margin-top:64px">Committee Dashboard</h2>
+<h2 class="text-center" style="margin-bottom:0px; margin-top:64px">Membership</h2>
 
 <div class="container page-content" style="margin-top:0px;">
     <!-- For TU membership = YES -->
-    <h4 class="mt-5 mb-3" style="margin-top:64px;">Membership ({{ employees.count }})</h4>
+    <h4 class="mt-5 mb-3" style="margin-top:64px;">Permanant ({{ employees.count }})</h4>
     <div class="d-flex mb-2" style="align-items:center; gap:6px; flex-wrap:wrap; justify-content:space-between;">
         <form method="get" class="d-flex" style="align-items:center; gap:6px; flex-wrap:wrap; flex:1;">
             <input type="text" name="name" class="form-control form-control-sm" placeholder="Search name" value="{{ request.GET.name }}">
@@ -47,11 +47,12 @@
         </form>
     </div>
 
-    <div style="overflow-x:auto; overflow-y:auto; max-height:350px; width:100%; margin-top:12px;">
+    <div style="overflow-x:auto; overflow-y:auto; max-height:380px; width:100%; margin-top:12px;">
         <table class="table table-bordered table-striped" style="background: #fff; min-width:1200px; width:100%;">
             <thead>
                 <tr>
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:80px; max-width:120px; white-space:nowrap;">PersonNumber</th>
                     {% for field, label in display_fields %}
                         {% if field == 'trade_union_member' %}
                             <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
@@ -80,6 +81,7 @@
                 {% for emp in employees %}
                     <tr>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:80px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ emp.person_number }}</td>
                         {% for field, label in display_fields %}
                             {% if field == 'trade_union_member' %}
                                 <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -178,6 +180,7 @@
                 <thead>
                     <tr>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:80px; max-width:120px; white-space:nowrap;">PersonNumber</th>
                         {% for field, label in display_fields %}
                             {% if field == 'trade_union_member' %}
                                 <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
@@ -206,6 +209,7 @@
             {% for emp in newcomers %}
             <tr>
                 <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
+                    <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:80px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ emp.person_number }}</td>
                 {% for field, label in display_fields %}
                     {# ...existing field rendering logic... #}
                     {% if field == 'trade_union_member' %}
@@ -262,6 +266,7 @@
                 <thead>
                     <tr>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:80px; max-width:120px; white-space:nowrap;">PersonNumber</th>
                         {% for field, label in display_fields %}
                             {% if field == 'trade_union_member' %}
                                 <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
@@ -284,6 +289,7 @@
                     {% for emp in maternity %}
                     <tr>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:80px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ emp.person_number }}</td>
                         {% for field, label in display_fields %}
                             {% if field == 'trade_union_member' %}
                                 <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{% if emp.trade_union_member %}Yes{% else %}No{% endif %}</td>
@@ -321,6 +327,7 @@
                 <thead>
                     <tr>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:80px; max-width:120px; white-space:nowrap;">PersonNumber</th>
                         {% for field, label in display_fields %}
                             {% if field == 'trade_union_member' %}
                                 <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
@@ -343,6 +350,7 @@
                     {% for emp in military %}
                     <tr>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:80px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ emp.person_number }}</td>
                         {% for field, label in display_fields %}
                             {% if field == 'trade_union_member' %}
                                 <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{% if emp.trade_union_member %}Yes{% else %}No{% endif %}</td>
@@ -380,6 +388,7 @@
                 <thead>
                     <tr>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
+                            <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:80px; max-width:120px; white-space:nowrap;">PersonNumber</th>
                         {% for field, label in display_fields %}
                             {% if field == 'trade_union_member' %}
                                 <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
@@ -408,6 +417,7 @@
                     {% for emp in withdrawn_no %}
                     <tr>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:80px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ emp.person_number }}</td>
                         {% for field, label in display_fields %}
                             {% if field == 'trade_union_member' %}
                                 <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -475,6 +485,7 @@
             <thead>
                 <tr>
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:40px; max-width:60px; white-space:nowrap;">No.</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:80px; max-width:120px; white-space:nowrap;">PersonNumber</th>
                     {% for field, label in display_fields %}
                         {% if field == 'trade_union_member' %}
                             <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Membership</th>
@@ -503,6 +514,7 @@
                 {% for emp in resignation %}
                 <tr>
                     <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em;">{{ forloop.counter }}</td>
+                        <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:80px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ emp.person_number }}</td>
                     {% for field, label in display_fields %}
                         {% if field == 'trade_union_member' %}
                             <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">

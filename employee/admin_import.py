@@ -1,4 +1,6 @@
 import pandas as pd
+import json
+from datetime import date
 from django.contrib import admin
 from django import forms
 from django.shortcuts import render
@@ -42,6 +44,12 @@ class EmployeeImportAdmin(admin.ModelAdmin):
                         username = str(row.get('username')).strip()
                         password = str(row.get('password')).strip()
                         email = str(row.get('email')).strip()
+                        dob_val = row.get('dob')
+                        if not dob_val or pd.isna(dob_val):
+                            dob_val = '1900-01-01'
+                        membership_since_val = row.get('membership_since')
+                        if not membership_since_val or pd.isna(membership_since_val):
+                            membership_since_val = date.today()
                         # Create user if not exists
                         user, created = User.objects.get_or_create(username=username, defaults={
                             'email': email
@@ -55,7 +63,7 @@ class EmployeeImportAdmin(admin.ModelAdmin):
                             'full_name_en': row.get('full_name_en'),
                             'full_name_vn': row.get('full_name_vn'),
                             'email': email,
-                            'dob': row.get('dob'),
+                            'dob': dob_val,
                             'gender': Gender.objects.filter(name=row.get('gender')).first(),
                             'discipline': Discipline.objects.filter(name=row.get('discipline')).first(),
                             'job_title': JobTitle.objects.filter(name=row.get('job_title')).first(),
@@ -70,12 +78,11 @@ class EmployeeImportAdmin(admin.ModelAdmin):
                             'address': row.get('address'),
                             'trade_union_member': bool(row.get('trade_union_member')),
                             'membership_type_by_admin': MembershipTypeByAdmin.objects.filter(name=row.get('membership_type_by_admin')).first(),
-                            'membership_since': row.get('membership_since'),
+                            'membership_since': membership_since_val,
                         })
                         # Children: expects a column 'children' as JSON or comma-separated list
                         children_data = row.get('children')
                         if children_data:
-                            import json
                             try:
                                 children_list = json.loads(children_data)
                             except Exception:
