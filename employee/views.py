@@ -1,4 +1,5 @@
 import io
+import json
 import pandas as pd
 import datetime
 from django import forms
@@ -16,6 +17,7 @@ from django.forms import modelformset_factory, inlineformset_factory, modelforms
 from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee
 from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm
 from django.db.models import Q
+from django.views.decorators.http import require_POST
 
 # Dùng chung cho dashboard và export
 DISPLAY_FIELDS = [
@@ -645,3 +647,23 @@ def register(request):
 	else:
 		form = EmployeeRegisterFormNoMembership()
 	return render(request, 'employee/register.html', {'form': form})
+
+@require_POST
+def update_birthday_gift(request):
+    try:
+        data = json.loads(request.body)
+        emp_id = data.get('id')
+        value = data.get('value')
+        # Accept both boolean and string representations
+        if value in [True, 'true', 'True', 1, '1']:
+            checked = True
+        else:
+            checked = False
+        emp = Employee.objects.get(id=emp_id)
+        emp.birthday_gift_received = checked
+        emp.save()
+        return JsonResponse({'success': True})
+    except Employee.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Employee not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

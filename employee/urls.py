@@ -15,4 +15,5 @@ urlpatterns = [
     path('committee-dashboard/', committee_dashboard, name='committee_dashboard'),
     path('committee-dashboard/export-excel/', views.export_dashboard_excel, name='export_dashboard_excel'),
     path('tu-pot/', views_tupot.tu_pot, name='tu_pot'),
+    path('update_birthday_gift/', views.update_birthday_gift, name='update_birthday_gift'),
 ]

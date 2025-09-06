@@ -97,6 +97,7 @@ class Employee(models.Model):
 	trade_union_member = models.BooleanField(default=False)
 	membership_type_by_admin = models.ForeignKey(MembershipTypeByAdmin, on_delete=models.SET_NULL, null=True, blank=True)
 	membership_since = models.DateTimeField(null=True, blank=True)
+	birthday_gift_received = models.BooleanField(default=False, help_text='Had received birthday gift for the current year')
 
 	def __str__(self):
 		return f"{self.person_number} - {self.full_name_en}"
