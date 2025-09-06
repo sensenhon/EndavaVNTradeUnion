@@ -687,3 +687,23 @@ def update_tet_gift(request):
         return JsonResponse({'success': False, 'error': 'Employee not found'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+	
+@require_POST
+def update_mooncake_gift(request):
+    try:
+        data = json.loads(request.body)
+        emp_id = data.get('id')
+        value = data.get('value')
+        # Accept both boolean and string representations
+        if value in [True, 'true', 'True', 1, '1']:
+            checked = True
+        else:
+            checked = False
+        emp = Employee.objects.get(id=emp_id)
+        emp.mooncake_gift_received = checked
+        emp.save()
+        return JsonResponse({'success': True})
+    except Employee.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Employee not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

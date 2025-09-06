@@ -17,4 +17,5 @@ urlpatterns = [
     path('tu-pot/', views_tupot.tu_pot, name='tu_pot'),
     path('update_birthday_gift/', views.update_birthday_gift, name='update_birthday_gift'),
     path('update_tet_gift/', views.update_tet_gift, name='update_tet_gift'),
+    path('update_mooncake_gift/', views.update_mooncake_gift, name='update_mooncake_gift'),
 ]
