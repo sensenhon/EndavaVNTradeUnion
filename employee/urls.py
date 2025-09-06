@@ -20,4 +20,5 @@ urlpatterns = [
     path('update_mooncake_gift/', views.update_mooncake_gift, name='update_mooncake_gift'),
     path('update_luckymoney_gift/', views.update_luckymoney_gift, name='update_luckymoney_gift'),
     path('update_june_gift/', views.update_june_gift, name='update_june_gift'),
+    path('update_autumn_gift/', views.update_autumn_gift, name='update_autumn_gift'),
 ]

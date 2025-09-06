@@ -2,6 +2,7 @@ import io
 import json
 import pandas as pd
 import datetime
+from lunardate import LunarDate
 from datetime import date
 from django import forms
 from django.urls import reverse
@@ -58,6 +59,20 @@ def get_children_info(employee_qs, june_first):
 				age = None
 			children_with_age.append({'child': child, 'age': age})
 		result[emp.id] = children_with_age
+	return result
+
+def get_children_autumn_gift_info(emp, autumn_date):
+	result = {}
+	for emp_item in emp:
+		children_list = emp_item.children.all() if hasattr(emp_item, 'children') else []
+		children_with_age = []
+		for child in children_list:
+			if child.dob:
+				age = autumn_date.year - child.dob.year - ((autumn_date.month, autumn_date.day) < (child.dob.month, child.dob.day))
+			else:
+				age = None
+			children_with_age.append({'child': child, 'age': age})
+		result[emp_item.id] = children_with_age
 	return result
 
 @user_passes_test(is_committee_or_superuser)
@@ -206,7 +221,7 @@ def committee_dashboard(request):
 		else:
 			tu_committee_map_newcomers[emp.id] = "-"
 	
-	# Prepare children age data for gift eligibility
+	# Prepare children age data for June gift eligibility
 	current_year = date.today().year
 	june_first = date(current_year, 6, 1)
 	employee_children_ages = get_children_info(employees, june_first)
@@ -215,6 +230,16 @@ def committee_dashboard(request):
 	resignation_children_ages = get_children_info(resignation, june_first)
 	maternity_children_ages = get_children_info(maternity, june_first)
 	military_children_ages = get_children_info(military, june_first)
+
+	# Prepare children age data for Autumn gift eligibility
+	current_year = date.today().year
+	autumn_date = LunarDate(current_year, 8, 15).toSolarDate()
+	employee_children_autumn_ages = get_children_autumn_gift_info(employees, autumn_date)
+	newcomer_children_autumn_ages = get_children_autumn_gift_info(newcomers, autumn_date)
+	withdrawn_no_children_autumn_ages = get_children_autumn_gift_info(withdrawn_no, autumn_date)
+	resignation_children_autumn_ages = get_children_autumn_gift_info(resignation, autumn_date)
+	maternity_children_autumn_ages = get_children_autumn_gift_info(maternity, autumn_date)
+	military_children_autumn_ages = get_children_autumn_gift_info(military, autumn_date)
 
 	return render(request, 'employee/committee_dashboard.html', {
 		'employees': employees,
@@ -242,6 +267,12 @@ def committee_dashboard(request):
 		'resignation_children_ages': resignation_children_ages,
 		'maternity_children_ages': maternity_children_ages,
 		'military_children_ages': military_children_ages,
+		'employee_children_autumn_ages': employee_children_autumn_ages,
+		'newcomer_children_autumn_ages': newcomer_children_autumn_ages,
+		'withdrawn_no_children_autumn_ages': withdrawn_no_children_autumn_ages,
+		'resignation_children_autumn_ages': resignation_children_autumn_ages,
+		'maternity_children_autumn_ages': maternity_children_autumn_ages,
+		'military_children_autumn_ages': military_children_autumn_ages,
 	})
 
 # Export dashboard to Excel (filtered)
@@ -277,8 +308,13 @@ def export_dashboard_excel(request):
 		('tet_gift_received', 'Tet Gift'),
 		('luckymoney_gift_received', 'Lucky Money Gift'),
 		('children_gift', 'Children Gift'),
+		('children_gift_autumn', 'Children Gift (Autumn)'),
 		('children', 'Children'),
 	]
+	
+	current_year = datetime.date.today().year
+	autumn_date = LunarDate(current_year, 8, 15).toSolarDate()
+
 	valid_sort_fields = [f[0] for f in display_fields]
 	if sort_field and sort_field in valid_sort_fields:
 		employees = employees.order_by(sort_field)
@@ -336,6 +372,12 @@ def export_dashboard_excel(request):
 		if children_list:
 			children_gift_str = '; '.join([f"{child.name}: {'Yes' if child.june_gift_received else 'No'}" for child in children_list])
 			row.append(children_gift_str)
+		else:
+			row.append('')
+		# Children Gift (Autumn)
+		if children_list:
+			autumn_gift_str = [f"{child.name}: {'Yes' if child.autumn_gift_received else 'No'}" for child in children_list]
+			row.append('; '.join(autumn_gift_str))
 		else:
 			row.append('')
 		# Children
@@ -787,6 +829,19 @@ def update_june_gift(request):
 	try:
 		child = Children.objects.get(id=child_id)
 		child.june_gift_received = received
+		child.save()
+		return JsonResponse({'success': True})
+	except Children.DoesNotExist:
+		return JsonResponse({'success': False, 'error': 'Child not found'})
+	
+@require_POST
+def update_autumn_gift(request):
+	data = json.loads(request.body)
+	child_id = data.get('child_id')
+	received = data.get('autumn_gift_received')
+	try:
+		child = Children.objects.get(id=child_id)
+		child.autumn_gift_received = received
 		child.save()
 		return JsonResponse({'success': True})
 	except Children.DoesNotExist:

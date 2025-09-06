@@ -95,6 +95,7 @@
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Children Gift (June)</th>
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Children Gift (Autumn)</th>
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                 </tr>
             </thead>
@@ -160,6 +161,28 @@
                                 </label>
                             {% endif %}
                         </td>
+                        <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:280px; max-width:280px;">
+                            {% if employee_children_autumn_ages|dict_get:emp.id and employee_children_autumn_ages|dict_get:emp.id|length > 0 %}
+                                {% for child_info in employee_children_autumn_ages|dict_get:emp.id %}
+                                    <label style="display:flex; align-items:center; margin-right:8px;">
+                                        <input type="checkbox"
+                                               class="autumn-gift-checkbox"
+                                               data-child-id="{{ child_info.child.id }}"
+                                               style="margin-right:4px;"
+                                               {% if child_info.child.autumn_gift_received %}checked{% endif %}
+                                               {% if child_info.age != None and child_info.age >= 15 %}disabled style="opacity:0.5;"{% else %}style="margin-right:4px;"{% endif %}>
+                                        <span> {{ child_info.child.name }} ({{ child_info.child.dob }})
+                                        {% if child_info.age != None %}<span style="color:#888; font-size:0.8em;">[{{ child_info.age }}]</span>{% endif %}
+                                        </span>
+                                    </label>
+                                {% endfor %}
+                            {% else %}
+                                <label style="display:flex; align-items:center; margin-right:8px;">
+                                    <input type="checkbox" disabled style="opacity:0.5; margin-right:4px;">
+                                    <span>No children</span>
+                                </label>
+                            {% endif %}
+                        </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:200px;">
                             <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-xs btn-outline-info" style="font-size:0.7em; padding:2px 6px;">{% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}</a>
                         </td>
@@ -219,6 +242,7 @@
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Children Gift (June)</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Children Gift (Autumn)</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                     </tr>
                 </thead>
@@ -277,7 +301,29 @@
                             {% else %}
                                 <label style="display:flex; align-items:center; margin-right:8px;">
                                     <input type="checkbox" disabled style="opacity:0.5; margin-right:4px;">
-                                    <span> No children</span>
+                                    <span>No children</span>
+                                </label>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:280px; max-width:280px;">
+                            {% if newcomers_children_autumn_ages|dict_get:emp.id and newcomers_children_autumn_ages|dict_get:emp.id|length > 0 %}
+                                {% for child_info in newcomers_children_autumn_ages|dict_get:emp.id %}
+                                    <label style="display:flex; align-items:center; margin-right:8px;">
+                                        <input type="checkbox"
+                                               class="autumn-gift-checkbox"
+                                               data-child-id="{{ child_info.child.id }}"
+                                               style="margin-right:4px;"
+                                               {% if child_info.child.autumn_gift_received %}checked{% endif %}
+                                               {% if child_info.age != None and child_info.age >= 15 %}disabled style="opacity:0.5;"{% else %}style="margin-right:4px;"{% endif %}>
+                                        <span> {{ child_info.child.name }} ({{ child_info.child.dob }})
+                                        {% if child_info.age != None %}<span style="color:#888; font-size:0.8em;">[{{ child_info.age }}]</span>{% endif %}
+                                        </span>
+                                    </label>
+                                {% endfor %}
+                            {% else %}
+                                <label style="display:flex; align-items:center; margin-right:8px;">
+                                    <input type="checkbox" disabled style="opacity:0.5; margin-right:4px;">
+                                    <span>No children</span>
                                 </label>
                             {% endif %}
                         </td>
@@ -341,6 +387,7 @@
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children Gift (June)</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children Gift (Autumn)</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                     </tr>
                 </thead>
@@ -407,6 +454,28 @@
                                 </label>
                             {% endif %}
                         </td>
+                        <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:280px; max-width:280px;">
+                            {% if maternity_children_autumn_ages|dict_get:emp.id and maternity_children_autumn_ages|dict_get:emp.id|length > 0 %}
+                                {% for child_info in maternity_children_autumn_ages|dict_get:emp.id %}
+                                    <label style="display:flex; align-items:center; margin-right:8px;">
+                                        <input type="checkbox"
+                                               class="autumn-gift-checkbox"
+                                               data-child-id="{{ child_info.child.id }}"
+                                               style="margin-right:4px;"
+                                               {% if child_info.child.autumn_gift_received %}checked{% endif %}
+                                               {% if child_info.age != None and child_info.age >= 15 %}disabled style="opacity:0.5;"{% else %}style="margin-right:4px;"{% endif %}>
+                                        <span> {{ child_info.child.name }} ({{ child_info.child.dob }})
+                                        {% if child_info.age != None %}<span style="color:#888; font-size:0.8em;">[{{ child_info.age }}]</span>{% endif %}
+                                        </span>
+                                    </label>
+                                {% endfor %}
+                            {% else %}
+                                <label style="display:flex; align-items:center; margin-right:8px;">
+                                    <input type="checkbox" disabled style="opacity:0.5; margin-right:4px;">
+                                    <span>No children</span>
+                                </label>
+                            {% endif %}
+                        </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:200px;">
                             <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-xs btn-outline-info" style="font-size:0.7em; padding:2px 6px;">{% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}</a>
                         </td>
@@ -467,6 +536,7 @@
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children Gift (June)</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children Gift (Autumn)</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                     </tr>
                 </thead>
@@ -532,6 +602,28 @@
                                 </label>
                             {% endif %}
                         </td>
+                        <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:280px; max-width:280px;">
+                            {% if military_children_autumn_ages|dict_get:emp.id and military_children_autumn_ages|dict_get:emp.id|length > 0 %}
+                                {% for child_info in military_children_autumn_ages|dict_get:emp.id %}
+                                    <label style="display:flex; align-items:center; margin-right:8px;">
+                                        <input type="checkbox"
+                                               class="autumn-gift-checkbox"
+                                               data-child-id="{{ child_info.child.id }}"
+                                               style="margin-right:4px;"
+                                               {% if child_info.child.autumn_gift_received %}checked{% endif %}
+                                               {% if child_info.age != None and child_info.age >= 15 %}disabled style="opacity:0.5;"{% else %}style="margin-right:4px;"{% endif %}>
+                                        <span> {{ child_info.child.name }} ({{ child_info.child.dob }})
+                                        {% if child_info.age != None %}<span style="color:#888; font-size:0.8em;">[{{ child_info.age }}]</span>{% endif %}
+                                        </span>
+                                    </label>
+                                {% endfor %}
+                            {% else %}
+                                <label style="display:flex; align-items:center; margin-right:8px;">
+                                    <input type="checkbox" disabled style="opacity:0.5; margin-right:4px;">
+                                    <span>No children</span>
+                                </label>
+                            {% endif %}
+                        </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:200px;">
                             <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-xs btn-outline-info" style="font-size:0.7em; padding:2px 6px;">{% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}</a>
                         </td>
@@ -591,6 +683,7 @@
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children Gift (June)</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children Gift (Autumn)</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                     </tr>
                 </thead>
@@ -649,6 +742,28 @@
                                 <label style="display:flex; align-items:center; margin-right:8px;">
                                     <input type="checkbox" disabled style="opacity:0.5; margin-right:4px;">
                                     <span> No children</span>
+                                </label>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:280px; max-width:280px;">
+                            {% if withdrawn_no_children_autumn_ages|dict_get:emp.id and withdrawn_no_children_autumn_ages|dict_get:emp.id|length > 0 %}
+                                {% for child_info in withdrawn_no_children_autumn_ages|dict_get:emp.id %}
+                                    <label style="display:flex; align-items:center; margin-right:8px;">
+                                        <input type="checkbox"
+                                               class="autumn-gift-checkbox"
+                                               data-child-id="{{ child_info.child.id }}"
+                                               style="margin-right:4px;"
+                                               {% if child_info.child.autumn_gift_received %}checked{% endif %}
+                                               {% if child_info.age != None and child_info.age >= 15 %}disabled style="opacity:0.5;"{% else %}style="margin-right:4px;"{% endif %}>
+                                        <span> {{ child_info.child.name }} ({{ child_info.child.dob }})
+                                        {% if child_info.age != None %}<span style="color:#888; font-size:0.8em;">[{{ child_info.age }}]</span>{% endif %}
+                                        </span>
+                                    </label>
+                                {% endfor %}
+                            {% else %}
+                                <label style="display:flex; align-items:center; margin-right:8px;">
+                                    <input type="checkbox" disabled style="opacity:0.5; margin-right:4px;">
+                                    <span>No children</span>
                                 </label>
                             {% endif %}
                         </td>
@@ -711,6 +826,7 @@
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children Gift (June)</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children Gift (Autumn)</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                     </tr>
                 </thead>
@@ -770,6 +886,28 @@
                                     </label>
                                 {% endif %}
                             </td>
+                            <td style="text-align:left; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:280px; max-width:280px;">
+                            {% if resignation_children_autumn_ages|dict_get:emp.id and resignation_children_autumn_ages|dict_get:emp.id|length > 0 %}
+                                {% for child_info in resignation_children_autumn_ages|dict_get:emp.id %}
+                                    <label style="display:flex; align-items:center; margin-right:8px;">
+                                        <input type="checkbox"
+                                               class="autumn-gift-checkbox"
+                                               data-child-id="{{ child_info.child.id }}"
+                                               style="margin-right:4px;"
+                                               {% if child_info.child.autumn_gift_received %}checked{% endif %}
+                                               {% if child_info.age != None and child_info.age >= 15 %}disabled style="opacity:0.5;"{% else %}style="margin-right:4px;"{% endif %}>
+                                        <span> {{ child_info.child.name }} ({{ child_info.child.dob }})
+                                        {% if child_info.age != None %}<span style="color:#888; font-size:0.8em;">[{{ child_info.age }}]</span>{% endif %}
+                                        </span>
+                                    </label>
+                                {% endfor %}
+                            {% else %}
+                                <label style="display:flex; align-items:center; margin-right:8px;">
+                                    <input type="checkbox" disabled style="opacity:0.5; margin-right:4px;">
+                                    <span>No children</span>
+                                </label>
+                            {% endif %}
+                        </td>
                             <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:200px;">
                                 <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-xs btn-outline-info" style="font-size:0.7em; padding:2px 6px;">{% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}</a>
                             </td>
@@ -872,29 +1010,57 @@
         });
     </script>
 
+    <!-- Script to handle June gift checkbox changes -->
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.june-gift-checkbox').forEach(function(checkbox) {
-            checkbox.addEventListener('change', function() {
-                const childId = this.getAttribute('data-child-id');
-                const checked = this.checked;
-                fetch('/update_june_gift/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
-                    body: JSON.stringify({
-                        child_id: childId,
-                        june_gift_received: checked
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.june-gift-checkbox').forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    const childId = this.getAttribute('data-child-id');
+                    const checked = this.checked;
+                    fetch('/update_june_gift/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            child_id: childId,
+                            june_gift_received: checked
+                        })
                     })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // Optionally show success/error
+                    .then(response => response.json())
+                    .then(data => {
+                        // Optionally show success/error
+                    });
                 });
             });
         });
-    });
+    </script>
+
+    <!-- Script to handle Autumn gift checkbox changes -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.autumn-gift-checkbox').forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    const childId = this.getAttribute('data-child-id');
+                    const checked = this.checked;
+                    fetch('/update_autumn_gift/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            child_id: childId,
+                            autumn_gift_received: checked
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Optionally show success/error
+                    });
+                });
+            });
+        });
     </script>
 {% endblock %}
