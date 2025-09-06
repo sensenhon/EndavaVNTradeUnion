@@ -91,8 +91,9 @@
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">TUCommittee</th>
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Birthday Gift</th>
-                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Mooncake Gift</th>
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
+                    <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                     <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                 </tr>
             </thead>
@@ -135,10 +136,13 @@
                             <input type="checkbox" class="birthday-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.birthday_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
+                            <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                        </td>
+                        <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
                             <input type="checkbox" class="tet-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.tet_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
-                            <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                            <input type="checkbox" class="luckymoney-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.luckymoney_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:200px;">
                             <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-xs btn-outline-info" style="font-size:0.7em; padding:2px 6px;">{% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}</a>
@@ -196,8 +200,9 @@
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">TUCommittee</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Birthday Gift</th>
-                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Mooncake Gift</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                     </tr>
                 </thead>
@@ -237,10 +242,13 @@
                             <input type="checkbox" class="birthday-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.birthday_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
+                            <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                        </td>
+                        <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
                             <input type="checkbox" class="tet-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.tet_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
-                            <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                            <input type="checkbox" class="luckymoney-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.luckymoney_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:200px;">
                             <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-xs btn-outline-info" style="font-size:0.7em; padding:2px 6px;">{% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}</a>
@@ -299,8 +307,9 @@
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">TUCommittee</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Birthday Gift</th>
-                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Mooncake Gift</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                     </tr>
                 </thead>
@@ -344,10 +353,13 @@
                             <input type="checkbox" class="birthday-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.birthday_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
+                            <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                        </td>
+                        <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
                             <input type="checkbox" class="tet-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.tet_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
-                            <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                            <input type="checkbox" class="luckymoney-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.luckymoney_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:200px;">
                             <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-xs btn-outline-info" style="font-size:0.7em; padding:2px 6px;">{% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}</a>
@@ -406,8 +418,9 @@
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">TUCommittee</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Birthday Gift</th>
-                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Mooncake Gift</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                     </tr>
                 </thead>
@@ -450,10 +463,13 @@
                             <input type="checkbox" class="birthday-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.birthday_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
+                            <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                        </td>
+                        <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
                             <input type="checkbox" class="tet-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.tet_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
-                            <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                            <input type="checkbox" class="luckymoney-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.luckymoney_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:200px;">
                             <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-xs btn-outline-info" style="font-size:0.7em; padding:2px 6px;">{% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}</a>
@@ -511,8 +527,9 @@
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">TUCommittee</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Birthday Gift</th>
-                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Mooncake Gift</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                     </tr>
                 </thead>
@@ -551,10 +568,13 @@
                             <input type="checkbox" class="birthday-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.birthday_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
+                            <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                        </td>
+                        <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
                             <input type="checkbox" class="tet-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.tet_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
-                            <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                            <input type="checkbox" class="luckymoney-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.luckymoney_gift_received %}checked{% endif %}>
                         </td>
                         <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:200px;">
                             <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-xs btn-outline-info" style="font-size:0.7em; padding:2px 6px;">{% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}</a>
@@ -612,8 +632,9 @@
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">TUCommittee</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:150px; white-space:nowrap;">Children</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Birthday Gift</th>
-                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Mooncake Gift</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Tet Gift</th>
+                        <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:90px; max-width:120px; white-space:nowrap;">Lucky Money Gift</th>
                         <th style="text-align:center; background:#f8f9fa; font-size:0.75em; padding:6px 4px; vertical-align:middle; min-width:120px; max-width:200px; white-space:nowrap;">Profile</th>
                     </tr>
                 </thead>
@@ -650,10 +671,13 @@
                                 <input type="checkbox" class="birthday-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.birthday_gift_received %}checked{% endif %}>
                             </td>
                             <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
+                                <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                            </td>
+                            <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
                                 <input type="checkbox" class="tet-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.tet_gift_received %}checked{% endif %}>
                             </td>
                             <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:90px; max-width:120px;">
-                                <input type="checkbox" class="mooncake-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.mooncake_gift_received %}checked{% endif %}>
+                                <input type="checkbox" class="luckymoney-gift-checkbox" data-emp-id="{{ emp.id }}" {% if emp.luckymoney_gift_received %}checked{% endif %}>
                             </td>
                             <td style="text-align:center; padding:6px 4px; vertical-align:middle; font-size:0.75em; min-width:120px; max-width:200px;">
                                 <a href="{% url 'profile' %}?id={{ emp.id }}" class="btn btn-sm btn-xs btn-outline-info" style="font-size:0.7em; padding:2px 6px;">{% if emp.user %}{{ emp.user.username }}{% else %}-{% endif %}</a>
@@ -720,6 +744,29 @@
                     var checked = this.checked;
                     // AJAX update
                     fetch('/update_mooncake_gift/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({id: empId, value: checked})
+                    }).then(r => r.json()).then(data => {
+                        // Optionally show success/error
+                    });
+                });
+            });
+        });
+    </script>
+
+    <!-- Script to handle LuckyMoney gift checkbox changes -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.luckymoney-gift-checkbox').forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    var empId = this.getAttribute('data-emp-id');
+                    var checked = this.checked;
+                    // AJAX update
+                    fetch('/update_luckymoney_gift/', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

@@ -18,4 +18,5 @@ urlpatterns = [
     path('update_birthday_gift/', views.update_birthday_gift, name='update_birthday_gift'),
     path('update_tet_gift/', views.update_tet_gift, name='update_tet_gift'),
     path('update_mooncake_gift/', views.update_mooncake_gift, name='update_mooncake_gift'),
+    path('update_luckymoney_gift/', views.update_luckymoney_gift, name='update_luckymoney_gift'),
 ]
