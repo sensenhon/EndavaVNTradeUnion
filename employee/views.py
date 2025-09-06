@@ -2,6 +2,7 @@ import io
 import json
 import pandas as pd
 import datetime
+from datetime import date
 from django import forms
 from django.urls import reverse
 from django.utils.crypto import get_random_string
@@ -45,6 +46,19 @@ DISPLAY_FIELDS = [
 
 def is_committee_or_superuser(user):
 	return user.is_superuser or user.groups.filter(name='TU committee').exists()
+
+def get_children_info(employee_qs, june_first):
+	result = {}
+	for emp in employee_qs:
+		children_with_age = []
+		for child in emp.children.all():
+			if child.dob:
+				age = june_first.year - child.dob.year - ((june_first.month, june_first.day) < (child.dob.month, child.dob.day))
+			else:
+				age = None
+			children_with_age.append({'child': child, 'age': age})
+		result[emp.id] = children_with_age
+	return result
 
 @user_passes_test(is_committee_or_superuser)
 @user_passes_test(is_committee_or_superuser)
@@ -135,6 +149,7 @@ def committee_dashboard(request):
 		employees = employees.filter(id__in=filtered_ids)
 	discipline_list = Discipline.objects.all().order_by('name')
 	floor_list = Floor.objects.all().order_by('name')
+
 	# Filtering
 	name_query = request.GET.get('name', '').strip()
 	discipline_query = request.GET.get('discipline', '').strip()
@@ -154,6 +169,7 @@ def committee_dashboard(request):
 		employees = employees.filter(floor__name__iexact=floor_query)
 	if birth_month_query: 
 		employees = employees.filter(dob__month__in=birth_month_query) 
+
 	# Sorting
 	valid_sort_fields = [f[0] for f in display_fields if f[0] != 'birth_month']
 	if sort_field and sort_field in valid_sort_fields:
@@ -162,6 +178,7 @@ def committee_dashboard(request):
 		employees = employees.order_by('dob__month')
 	histories = EditHistory.objects.all().order_by('-edit_time')
 	is_committee = request.user.groups.filter(name='TU committee').exists()
+
 	# Map employee id to TUCommittee (user, email) by floor for main employees
 	tu_committee_map = {}
 	for emp in employees:
@@ -188,6 +205,17 @@ def committee_dashboard(request):
 			tu_committee_map_newcomers[emp.id] = f"{president.user.username} ({president.email})"
 		else:
 			tu_committee_map_newcomers[emp.id] = "-"
+	
+	# Prepare children age data for gift eligibility
+	current_year = date.today().year
+	june_first = date(current_year, 6, 1)
+	employee_children_ages = get_children_info(employees, june_first)
+	newcomer_children_ages = get_children_info(newcomers, june_first)
+	withdrawn_no_children_ages = get_children_info(withdrawn_no, june_first)
+	resignation_children_ages = get_children_info(resignation, june_first)
+	maternity_children_ages = get_children_info(maternity, june_first)
+	military_children_ages = get_children_info(military, june_first)
+
 	return render(request, 'employee/committee_dashboard.html', {
 		'employees': employees,
 		'newcomers': newcomers,
@@ -207,7 +235,13 @@ def committee_dashboard(request):
 		'tu_committee_map_newcomers': tu_committee_map_newcomers,
 		'tu_committees': tu_committees,
 		'selected_tu_committee': tu_committee_query,
-		'is_pot': request.user.groups.filter(name='pot').exists() if request.user.is_authenticated else False
+		'is_pot': request.user.groups.filter(name='pot').exists() if request.user.is_authenticated else False,
+		'employee_children_ages': employee_children_ages,
+		'newcomer_children_ages': newcomer_children_ages,
+		'withdrawn_no_children_ages': withdrawn_no_children_ages,
+		'resignation_children_ages': resignation_children_ages,
+		'maternity_children_ages': maternity_children_ages,
+		'military_children_ages': military_children_ages,
 	})
 
 # Export dashboard to Excel (filtered)
@@ -238,6 +272,11 @@ def export_dashboard_excel(request):
 		('membership_type_by_admin', 'MembershipByTU'),
 		('membership_since', 'MembershipSince'),
 		('tu_committee', 'TUCommittee'),
+		('birthday_gift_received', 'Birthday Gift'),
+		('mooncake_gift_received', 'Mooncake Gift'),
+		('tet_gift_received', 'Tet Gift'),
+		('luckymoney_gift_received', 'Lucky Money Gift'),
+		('children_gift', 'Children Gift'),
 		('children', 'Children'),
 	]
 	valid_sort_fields = [f[0] for f in display_fields]
@@ -267,7 +306,6 @@ def export_dashboard_excel(request):
 			elif field == 'birth_month':
 				row.append(str(emp.dob.month) if emp.dob else '')
 			elif field == 'tu_committee':
-				# Nếu Employee có liên kết với TUCommittee, xuất tên committee
 				committee = getattr(emp, 'tu_committee', None)
 				if committee:
 					row.append(str(committee))
@@ -284,10 +322,23 @@ def export_dashboard_excel(request):
 		if committee:
 			row.append(str(committee))
 		else:
-			# Nếu có map hoặc logic riêng, thay thế ở đây
+			row.append('')
+		# Birthday Gift
+		row.append('Yes' if emp.birthday_gift_received else 'No')
+		# Mooncake Gift
+		row.append('Yes' if emp.mooncake_gift_received else 'No')
+		# Tet Gift
+		row.append('Yes' if emp.tet_gift_received else 'No')
+		# Lucky Money Gift
+		row.append('Yes' if emp.luckymoney_gift_received else 'No')
+		# Children Gift (June)
+		children_list = emp.children.all() if hasattr(emp, 'children') else []
+		if children_list:
+			children_gift_str = '; '.join([f"{child.name}: {'Yes' if child.june_gift_received else 'No'}" for child in children_list])
+			row.append(children_gift_str)
+		else:
 			row.append('')
 		# Children
-		children_list = emp.children.all() if hasattr(emp, 'children') else []
 		if children_list:
 			children_str = '; '.join([f"{child.name} ({child.dob})" for child in children_list])
 			row.append(children_str)
@@ -727,3 +778,16 @@ def update_luckymoney_gift(request):
         return JsonResponse({'success': False, 'error': 'Employee not found'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+@require_POST
+def update_june_gift(request):
+	data = json.loads(request.body)
+	child_id = data.get('child_id')
+	received = data.get('june_gift_received')
+	try:
+		child = Children.objects.get(id=child_id)
+		child.june_gift_received = received
+		child.save()
+		return JsonResponse({'success': True})
+	except Children.DoesNotExist:
+		return JsonResponse({'success': False, 'error': 'Child not found'})

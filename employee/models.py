@@ -109,6 +109,7 @@ class Children(models.Model):
 	employee = models.ForeignKey(Employee, related_name='children', on_delete=models.CASCADE)
 	name = models.CharField(max_length=100)
 	dob = models.DateField()
+	june_gift_received = models.BooleanField(default=False, help_text='Received June Children gift for the current year')
 
 	def __str__(self):
 		return f"{self.name} ({self.dob})"
