@@ -1,4 +1,3 @@
-# Statistics view for yearly gift summary
 from django.views.decorators.http import require_GET
 import io
 import json
@@ -18,7 +17,7 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.forms import modelformset_factory, inlineformset_factory, modelformset_factory
-from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee, EmployeeGiftYear
+from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee, EmployeeGiftYear, FinancialCategory, FinancialTransaction, FinancialDescription
 from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm
 from django.db.models import Q
 from django.views.decorators.http import require_POST
@@ -955,3 +954,94 @@ def update_autumn_gift(request):
 		return JsonResponse({'success': True})
 	except Children.DoesNotExist:
 		return JsonResponse({'success': False, 'error': 'Child not found'})
+	
+class FinancialTransactionForm(forms.ModelForm):
+	class Meta:
+		model = FinancialTransaction
+		fields = ['financial_type', 'category', 'date', 'payment_id', 'description', 'details', 'amount', 'payment_evidence']
+		widgets = {
+			'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+			'amount': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+			'details': forms.Textarea(attrs={'class': 'form-control form-control-sm', 'rows': 2}),
+		}
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		for field in self.fields:
+			self.fields[field].required = True
+		self.fields['details'].widget.attrs['placeholder'] = 'Eg: F5 - sen.hon'
+		self.fields['details'].widget.attrs['class'] = 'form-control form-control-sm'
+		ftype = self.data.get('financial_type') or getattr(self.instance, 'financial_type', None)
+		if ftype:
+			self.fields['category'].queryset = FinancialCategory.objects.filter(type=ftype)
+			self.fields['description'].queryset = FinancialDescription.objects.filter(type=ftype)
+		else:
+			self.fields['category'].queryset = FinancialCategory.objects.none()
+			self.fields['description'].queryset = FinancialDescription.objects.none()
+
+@login_required
+def financial_view(request):
+	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+	if not (is_superuser or is_committee):
+		return redirect('home')
+	form = FinancialTransactionForm(request.POST or None, request.FILES or None)
+	if request.method == 'POST' and form.is_valid():
+		transaction = form.save(commit=False)
+		transaction.created_by = Employee.objects.filter(user=request.user).first()
+		transaction.save()
+		messages.success(request, 'Financial transaction added!')
+		return redirect('financial')
+	transactions = FinancialTransaction.objects.order_by('-date', '-created_at')[:50]
+	return render(request, 'employee/financial.html', {
+		'form': form,
+		'transactions': transactions,
+		'is_superuser': is_superuser,
+		'is_committee': is_committee,
+	})
+
+# Edit financial transaction
+@login_required
+def edit_financial_transaction(request, pk):
+	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+	if not (is_superuser or is_committee):
+		return redirect('home')
+	transaction = FinancialTransaction.objects.get(pk=pk)
+	form = FinancialTransactionForm(request.POST or None, request.FILES or None, instance=transaction)
+	if request.method == 'POST' and form.is_valid():
+		transaction = form.save(commit=False)
+		transaction.created_by = Employee.objects.filter(user=request.user).first()
+		transaction.save()
+		messages.success(request, 'Financial transaction updated!')
+		return redirect('financial')
+	return render(request, 'employee/financial.html', {
+		'form': form,
+		'transactions': FinancialTransaction.objects.order_by('-date', '-created_at')[:50],
+		'edit_mode': True,
+		'edit_id': pk,
+		'is_superuser': is_superuser,
+		'is_committee': is_committee,
+	})
+
+# Delete financial transaction
+@login_required
+def delete_financial_transaction(request, pk):
+	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+	if not (is_superuser or is_committee):
+		return redirect('home')
+	transaction = FinancialTransaction.objects.get(pk=pk)
+	transaction.delete()
+	messages.success(request, 'Financial transaction deleted!')
+	return redirect('financial')
+
+@login_required
+def get_financial_options(request):
+    ftype = request.GET.get('type')
+    categories = FinancialCategory.objects.filter(type=ftype)
+    descriptions = FinancialDescription.objects.filter(type=ftype)
+    return JsonResponse({
+        'categories': [{'id': c.id, 'name': str(c)} for c in categories],
+        'descriptions': [{'id': d.id, 'text': str(d)} for d in descriptions],
+    })

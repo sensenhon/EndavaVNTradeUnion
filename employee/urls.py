@@ -1,4 +1,7 @@
 from django.urls import path
+from .views import committee_dashboard, financial_view
+from . import views, views_tupot
+from django.urls import path
 from .views import committee_dashboard
 from . import views, views_tupot
 
@@ -14,6 +17,9 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('committee-dashboard/', committee_dashboard, name='committee_dashboard'),
     path('statistics/', views.statistics_view, name='statistics'),
+    path('financial/', views.financial_view, name='financial'),
+    path('financial/edit/<int:pk>/', views.edit_financial_transaction, name='edit_financial_transaction'),
+    path('financial/delete/<int:pk>/', views.delete_financial_transaction, name='delete_financial_transaction'),
     path('committee-dashboard/export-excel/', views.export_dashboard_excel, name='export_dashboard_excel'),
     path('tu-pot/', views_tupot.tu_pot, name='tu_pot'),
     path('update_birthday_gift/', views.update_birthday_gift, name='update_birthday_gift'),
@@ -22,4 +28,5 @@ urlpatterns = [
     path('update_luckymoney_gift/', views.update_luckymoney_gift, name='update_luckymoney_gift'),
     path('update_june_gift/', views.update_june_gift, name='update_june_gift'),
     path('update_autumn_gift/', views.update_autumn_gift, name='update_autumn_gift'),
+    path('get_financial_options/', views.get_financial_options, name='get_financial_options'),
 ]

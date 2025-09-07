@@ -1,0 +1,190 @@
+{% extends 'employee/base.html' %}
+{% block title %}Financial{% endblock %}
+{% block content %}
+<div class="container mt-5 page-content">
+    <h2 class="text-center mb-4">Financial Management</h2>
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <form method="post" enctype="multipart/form-data" class="card shadow-sm mb-4" id="financial-form" style="font-size:0.95em;">
+                {% csrf_token %}
+                <div class="card-body">
+                    {{ form.non_field_errors }}
+                    <div class="mb-3 row align-items-center">
+                        <div class="col-4">{{ form.financial_type.label_tag }} <span class="text-danger">*</span></div>
+                        <div class="col-8">{{ form.financial_type }}</div>
+                        {{ form.financial_type.errors }}
+                    </div>
+                    <div class="mb-3 row align-items-center">
+                        <div class="col-4">{{ form.category.label_tag }} <span class="text-danger">*</span></div>
+                        <div class="col-8"><select id="id_category" name="category" class="form-select" style="width:380px; min-width:180px;"> </select></div>
+                        {{ form.category.errors }}
+                    </div>
+                    <div class="mb-3 row align-items-center">
+                        <div class="col-4">{{ form.date.label_tag }} <span class="text-danger">*</span></div>
+                        <div class="col-8">{{ form.date }}</div>
+                        {{ form.date.errors }}
+                    </div>
+                    <div class="mb-3 row align-items-center">
+                        <div class="col-4">{{ form.payment_id.label_tag }} <span class="text-danger">*</span></div>
+                        <div class="col-8">{{ form.payment_id }}</div>
+                        {{ form.payment_id.errors }}
+                    </div>
+                    <div class="mb-3 row align-items-center">
+                        <div class="col-4">{{ form.description.label_tag }} <span class="text-danger">*</span></div>
+                        <div class="col-8"><select id="id_description" name="description" class="form-select" style="width:380px; min-width:180px;"> </select></div>
+                        {{ form.description.errors }}
+                    </div>
+                    <div class="mb-3 row align-items-center">
+                        <div class="col-4">{{ form.details.label_tag }} <span class="text-danger">*</span></div>
+                        <div class="col-8">
+                            {{ form.details }}
+                        </div>
+                        {{ form.details.errors }}
+                    </div>
+                    <div class="mb-3 row align-items-center">
+                        <div class="col-4">{{ form.amount.label_tag }} <span class="text-danger">*</span></div>
+                        <div class="col-8">
+                            <input type="text" name="amount" id="id_amount" class="form-control" required style="width: 180px; font-size: 0.95rem;" min="0" inputmode="numeric" pattern="[0-9,]*">
+                        </div>
+                        {{ form.amount.errors }}
+                    </div>
+                    <div class="mb-3 row align-items-center">
+                        <div class="col-4">{{ form.payment_evidence.label_tag }} <span class="text-danger">*</span></div>
+                        <div class="col-8">{{ form.payment_evidence }}</div>
+                        {{ form.payment_evidence.errors }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row mt-4" style="font-size:0.8em;">
+        <div class="col-lg-10 mx-auto">
+            <h4 class="mb-3">Recent Transactions</h4>
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Payment ID</th>
+                        <th>Description</th>
+                        <th>Details</th>
+                        <th>Amount</th>
+                        <th>Evidence</th>
+                        <th>User</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr>
+                        <td>{{ t.date }}</td>
+                        <td>{{ t.get_financial_type_display }}</td>
+                        <td>{{ t.category }}</td>
+                        <td>{{ t.payment_id }}</td>
+                        <td>{{ t.description }}</td>
+                        <td>{{ t.details }}</td>
+                        <td class="amount-cell">{{ t.amount }}</td>
+                        <td>
+                            {% if t.payment_evidence %}
+                                <a href="{{ t.payment_evidence.url }}" target="_blank">
+                                    <img src="{{ t.payment_evidence.url }}" alt="evidence" style="max-width:80px; max-height:80px;">
+                                </a>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{{ t.created_by }}</td>
+                        <td>
+                            <a href="{% url 'edit_financial_transaction' t.id %}" class="btn btn-warning" style="font-size:0.7em; padding:1px 4px; margin:0; line-height:1;">Edit</a>
+                            <a href="{% url 'delete_financial_transaction' t.id %}" class="btn btn-danger" style="font-size:0.7em; padding:1px 4px; margin:0; line-height:1;" onclick="return confirm('Bạn có chắc muốn xóa giao dịch này?');">Delete</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="10" class="text-center">No transactions yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<style>
+input::placeholder {
+    font-size: 0.85em !important;
+}
+</style>
+<script>
+    function formatAmount(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    function formatAmountInput(input) {
+        let val = input.value.replace(/,/g, '');
+        if(val && !isNaN(val) && val !== "") {
+            input.value = Number(val).toLocaleString('en-US');
+        } else if(val === "") {
+            input.value = "";
+        }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        function updateDropdowns() {
+            var ftype = document.getElementById('id_financial_type').value;
+            fetch('/get_financial_options/?type=' + ftype)
+                .then(response => response.json())
+                .then(data => {
+                    var catSelect = document.getElementById('id_category');
+                    var descSelect = document.getElementById('id_description');
+                    catSelect.innerHTML = '';
+                    descSelect.innerHTML = '';
+                    // Add default empty option
+                    var catDefault = document.createElement('option');
+                    catDefault.value = '';
+                    catDefault.text = '-- Select Category --';
+                    catSelect.appendChild(catDefault);
+                    var descDefault = document.createElement('option');
+                    descDefault.value = '';
+                    descDefault.text = '-- Select Description --';
+                    descSelect.appendChild(descDefault);
+                    data.categories.forEach(function(opt) {
+                        var option = document.createElement('option');
+                        option.value = opt.id;
+                        option.text = opt.name;
+                        catSelect.appendChild(option);
+                    });
+                    data.descriptions.forEach(function(opt) {
+                        var option = document.createElement('option');
+                        option.value = opt.id;
+                        option.text = opt.text;
+                        descSelect.appendChild(option);
+                    });
+                });
+        }
+        document.getElementById('id_financial_type').addEventListener('change', updateDropdowns);
+        updateDropdowns();
+        // Format amount in transaction table
+        document.querySelectorAll('td.amount-cell').forEach(function(td) {
+            var val = td.textContent.trim();
+            if(val && !isNaN(val)) td.textContent = formatAmount(val);
+        });
+        // Amount input formatting
+        var amountInput = document.getElementById('id_amount');
+        if(amountInput) {
+            amountInput.addEventListener('input', function(e) {
+                let cursorPos = amountInput.selectionStart;
+                formatAmountInput(amountInput);
+                amountInput.setSelectionRange(cursorPos, cursorPos);
+            });
+            amountInput.addEventListener('blur', function() {
+                formatAmountInput(amountInput);
+            });
+        }
+        // Before submit, remove commas from amount
+        var form = document.getElementById('financial-form');
+        if(form) {
+            form.addEventListener('submit', function(e) {
+                if(amountInput) {
+                    amountInput.value = amountInput.value.replace(/,/g, '');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

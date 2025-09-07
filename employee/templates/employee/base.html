@@ -37,6 +37,7 @@
                             {% if is_superuser or is_committee %}
                             <a class="dropdown-item" href="{% url 'committee_dashboard' %}">Membership</a>
                             <a class="dropdown-item" href="{% url 'statistics' %}">Statistics</a>
+                            <a class="dropdown-item" href="{% url 'financial' %}">Financial</a>
                             {% endif %}
                             {% if is_superuser or is_pot %}
                             <a class="dropdown-item" href="{% url 'tu_pot' %}">TU-POT</a>

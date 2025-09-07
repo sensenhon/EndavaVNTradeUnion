@@ -1,4 +1,3 @@
-# Model quản lý danh sách TU committee
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -147,4 +146,50 @@ class EmployeeGiftYear(models.Model):
 		
 	def __str__(self):
 		return f"{self.employee} - {self.year} - {self.gift_type}"
-	
+
+class FinancialCategory(models.Model):
+	TYPE_CHOICES = (
+		('income', 'Thu'),
+		('expense', 'Chi'),
+	)
+	code = models.CharField(max_length=20, unique=True)
+	name = models.CharField(max_length=100)
+	type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+
+	def __str__(self):
+		return f"{self.code} - {self.name}"
+
+
+class FinancialDescription(models.Model):
+	TYPE_CHOICES = (
+		('income', 'Thu'),
+		('expense', 'Chi'),
+	)
+	description = models.CharField(max_length=255, unique=True)
+	type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+
+	def __str__(self):
+		return f"{self.description}"
+
+class FinancialTransaction(models.Model):
+	FINANCIAL_TYPE_CHOICES = (
+		('income', 'Thu'),
+		('expense', 'Chi'),
+	)
+	financial_type = models.CharField(max_length=10, choices=FINANCIAL_TYPE_CHOICES)
+	category = models.ForeignKey(FinancialCategory, on_delete=models.PROTECT)
+	date = models.DateField()
+	payment_id = models.CharField(max_length=255)
+	description = models.ForeignKey(FinancialDescription, on_delete=models.PROTECT)
+	details = models.CharField(max_length=255)
+	amount = models.DecimalField(max_digits=15, decimal_places=0)
+	payment_evidence = models.ImageField(upload_to='financial_evidence/', null=True, blank=True)
+	created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	@property
+	def final_details(self):
+		return f"{self.description.description} {self.details}".strip()
+
+	def __str__(self):
+		return f"{self.get_financial_type_display()} - {self.category} - {self.amount} VND on {self.date}"

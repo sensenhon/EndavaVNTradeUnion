@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
     Employee, Children, Discipline, JobTitle, Floor,
-    Gender, WorkingType, EditHistory, MembershipTypeByAdmin, TUCommittee, EmployeeGiftYear
+    Gender, WorkingType, EditHistory, MembershipTypeByAdmin, TUCommittee, EmployeeGiftYear,
+    FinancialCategory, FinancialDescription, FinancialTransaction
 )
 from .admin_import import EmployeeImportAdmin
 
@@ -22,3 +23,7 @@ class EmployeeGiftYearAdmin(admin.ModelAdmin):
 
 # Register Employee with EmployeeImportAdmin for Excel import
 admin.site.register(Employee, EmployeeImportAdmin)
+
+admin.site.register(FinancialCategory)
+admin.site.register(FinancialDescription)
+admin.site.register(FinancialTransaction)
