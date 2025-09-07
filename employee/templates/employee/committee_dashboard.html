@@ -932,7 +932,11 @@
                             'Content-Type': 'application/json',
                             'X-CSRFToken': '{{ csrf_token }}'
                         },
-                        body: JSON.stringify({id: empId, value: checked})
+                        body: JSON.stringify({
+                            id: empId,
+                            gift_type: 'birthday',
+                            value: checked
+                        })
                     }).then(r => r.json()).then(data => {
                         // Optionally show success/error
                     });
@@ -955,7 +959,11 @@
                             'Content-Type': 'application/json',
                             'X-CSRFToken': '{{ csrf_token }}'
                         },
-                        body: JSON.stringify({id: empId, value: checked})
+                        body: JSON.stringify({
+                            id: empId,
+                            gift_type: 'tet',
+                            value: checked
+                        })
                     }).then(r => r.json()).then(data => {
                         // Optionally show success/error
                     });
@@ -978,7 +986,11 @@
                             'Content-Type': 'application/json',
                             'X-CSRFToken': '{{ csrf_token }}'
                         },
-                        body: JSON.stringify({id: empId, value: checked})
+                        body: JSON.stringify({
+                            id: empId,
+                            gift_type: 'mooncake',
+                            value: checked
+                        })
                     }).then(r => r.json()).then(data => {
                         // Optionally show success/error
                     });
@@ -1001,7 +1013,11 @@
                             'Content-Type': 'application/json',
                             'X-CSRFToken': '{{ csrf_token }}'
                         },
-                        body: JSON.stringify({id: empId, value: checked})
+                        body: JSON.stringify({
+                            id: empId,
+                            gift_type: 'luckymoney',
+                            value: checked
+                        })
                     }).then(r => r.json()).then(data => {
                         // Optionally show success/error
                     });
@@ -1025,6 +1041,7 @@
                         },
                         body: JSON.stringify({
                             child_id: childId,
+                            gift_type: 'june',
                             june_gift_received: checked
                         })
                     })
@@ -1052,6 +1069,7 @@
                         },
                         body: JSON.stringify({
                             child_id: childId,
+                            gift_type: 'autumn',
                             autumn_gift_received: checked
                         })
                     })

@@ -123,3 +123,28 @@ class EditHistory(models.Model):
 
 	def __str__(self):
 		return f"Edit by {self.edited_by} on {self.edit_time}"
+
+class EmployeeGiftYear(models.Model):
+	employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+	year = models.IntegerField()
+	gift_type = models.CharField(max_length=50)
+	received = models.BooleanField(default=False)
+
+	def june_gift_checked_count(self):
+		if self.gift_type == 'june':
+			return self.employee.children.filter(june_gift_received=True).count()
+		return ''
+	june_gift_checked_count.short_description = 'June Gift Checked'
+
+	def autumn_gift_checked_count(self):
+		if self.gift_type == 'autumn':
+			return self.employee.children.filter(autumn_gift_received=True).count()
+		return ''
+	autumn_gift_checked_count.short_description = 'Autumn Gift Checked'
+
+	class Meta:
+		unique_together = ('employee', 'year', 'gift_type')
+		
+	def __str__(self):
+		return f"{self.employee} - {self.year} - {self.gift_type}"
+	

@@ -16,7 +16,7 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.forms import modelformset_factory, inlineformset_factory, modelformset_factory
-from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee
+from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee, EmployeeGiftYear
 from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm
 from django.db.models import Q
 from django.views.decorators.http import require_POST
@@ -221,6 +221,7 @@ def committee_dashboard(request):
 		else:
 			tu_committee_map_newcomers[emp.id] = "-"
 	
+
 	# Prepare children age data for June gift eligibility
 	current_year = date.today().year
 	june_first = date(current_year, 6, 1)
@@ -230,6 +231,20 @@ def committee_dashboard(request):
 	resignation_children_ages = get_children_info(resignation, june_first)
 	maternity_children_ages = get_children_info(maternity, june_first)
 	military_children_ages = get_children_info(military, june_first)
+
+	# Helper: count ticked June gift boxes per employee
+	def count_june_gift_checked(children_ages_dict):
+		result = {}
+		for emp_id, children_list in children_ages_dict.items():
+			result[emp_id] = sum(1 for info in children_list if getattr(info['child'], 'june_gift_received', False))
+		return result
+
+	employee_june_gift_checked = count_june_gift_checked(employee_children_ages)
+	newcomer_june_gift_checked = count_june_gift_checked(newcomer_children_ages)
+	withdrawn_no_june_gift_checked = count_june_gift_checked(withdrawn_no_children_ages)
+	resignation_june_gift_checked = count_june_gift_checked(resignation_children_ages)
+	maternity_june_gift_checked = count_june_gift_checked(maternity_children_ages)
+	military_june_gift_checked = count_june_gift_checked(military_children_ages)
 
 	# Prepare children age data for Autumn gift eligibility
 	current_year = date.today().year
@@ -273,6 +288,12 @@ def committee_dashboard(request):
 		'resignation_children_autumn_ages': resignation_children_autumn_ages,
 		'maternity_children_autumn_ages': maternity_children_autumn_ages,
 		'military_children_autumn_ages': military_children_autumn_ages,
+		'employee_june_gift_checked': employee_june_gift_checked,
+		'newcomer_june_gift_checked': newcomer_june_gift_checked,
+		'withdrawn_no_june_gift_checked': withdrawn_no_june_gift_checked,
+		'resignation_june_gift_checked': resignation_june_gift_checked,
+		'maternity_june_gift_checked': maternity_june_gift_checked,
+		'military_june_gift_checked': military_june_gift_checked,
 	})
 
 # Export dashboard to Excel (filtered)
@@ -718,6 +739,7 @@ def check_username(request):
 	username = request.GET.get('username', '')
 	exists = User.objects.filter(username=username).exists()
 	return JsonResponse({'exists': exists})
+
 def home(request):
 	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
 	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
@@ -747,7 +769,6 @@ def update_birthday_gift(request):
         data = json.loads(request.body)
         emp_id = data.get('id')
         value = data.get('value')
-        # Accept both boolean and string representations
         if value in [True, 'true', 'True', 1, '1']:
             checked = True
         else:
@@ -755,6 +776,14 @@ def update_birthday_gift(request):
         emp = Employee.objects.get(id=emp_id)
         emp.birthday_gift_received = checked
         emp.save()
+        # sync with EmployeeGiftYear
+        year = date.today().year
+        EmployeeGiftYear.objects.update_or_create(
+            employee=emp,
+            year=year,
+            gift_type='birthday',
+            defaults={'received': checked}
+        )
         return JsonResponse({'success': True})
     except Employee.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Employee not found'})
@@ -767,7 +796,6 @@ def update_tet_gift(request):
         data = json.loads(request.body)
         emp_id = data.get('id')
         value = data.get('value')
-        # Accept both boolean and string representations
         if value in [True, 'true', 'True', 1, '1']:
             checked = True
         else:
@@ -775,6 +803,14 @@ def update_tet_gift(request):
         emp = Employee.objects.get(id=emp_id)
         emp.tet_gift_received = checked
         emp.save()
+        # sync with EmployeeGiftYear
+        year = date.today().year
+        EmployeeGiftYear.objects.update_or_create(
+            employee=emp,
+            year=year,
+            gift_type='tet',
+            defaults={'received': checked}
+        )
         return JsonResponse({'success': True})
     except Employee.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Employee not found'})
@@ -795,6 +831,14 @@ def update_mooncake_gift(request):
         emp = Employee.objects.get(id=emp_id)
         emp.mooncake_gift_received = checked
         emp.save()
+        # sync with EmployeeGiftYear
+        year = date.today().year
+        EmployeeGiftYear.objects.update_or_create(
+            employee=emp,
+            year=year,
+            gift_type='mooncake',
+            defaults={'received': checked}
+        )
         return JsonResponse({'success': True})
     except Employee.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Employee not found'})
@@ -815,6 +859,14 @@ def update_luckymoney_gift(request):
         emp = Employee.objects.get(id=emp_id)
         emp.luckymoney_gift_received = checked
         emp.save()
+        # sync with EmployeeGiftYear
+        year = date.today().year
+        EmployeeGiftYear.objects.update_or_create(
+            employee=emp,
+            year=year,
+            gift_type='luckymoney',
+            defaults={'received': checked}
+        )
         return JsonResponse({'success': True})
     except Employee.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Employee not found'})
@@ -830,6 +882,14 @@ def update_june_gift(request):
 		child = Children.objects.get(id=child_id)
 		child.june_gift_received = received
 		child.save()
+		# sync with EmployeeGiftYear
+		year = date.today().year
+		EmployeeGiftYear.objects.update_or_create(
+            employee=child.employee,
+            year=year,
+            gift_type='june',
+            defaults={'received': received}
+        )
 		return JsonResponse({'success': True})
 	except Children.DoesNotExist:
 		return JsonResponse({'success': False, 'error': 'Child not found'})
@@ -843,6 +903,14 @@ def update_autumn_gift(request):
 		child = Children.objects.get(id=child_id)
 		child.autumn_gift_received = received
 		child.save()
+		# sync with EmployeeGiftYear
+		year = date.today().year
+		EmployeeGiftYear.objects.update_or_create(
+            employee=child.employee,
+            year=year,
+            gift_type='autumn',
+            defaults={'received': received}
+        )
 		return JsonResponse({'success': True})
 	except Children.DoesNotExist:
 		return JsonResponse({'success': False, 'error': 'Child not found'})
