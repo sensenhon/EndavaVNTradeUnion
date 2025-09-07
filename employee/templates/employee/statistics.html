@@ -1,0 +1,60 @@
+{% extends 'employee/base.html' %}
+{% block title %}Statistics{% endblock %}
+{% block content %}
+<div class="container mt-5 page-content">
+    <h2 class="text-center" style="margin-bottom:24px;">Statistics</h2>
+    <div class="container mt-4">
+        <form method="get" class="mb-4" style="max-width:300px;">
+            <label for="year-select" class="form-label">Select Year:</label>
+            <select id="year-select" name="year" class="form-select" onchange="this.form.submit()">
+                {% for y in all_years %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="mb-3" style="font-size:0.96em;">
+                    <span class="fw-bold"><strong>Total Permanent members:</strong></span>
+                    <span class="badge bg-warning text-dark" style="font-size:1em;">{{ total_permanent }}</span>
+                </div>
+                <div class="mb-3" style="font-size:0.96em;">
+                    <span class="fw-bold"><strong>Gift Summary:</strong></span>
+                </div>
+                <table class="table table-bordered table-striped mb-0" style="font-size:0.95em;">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="font-size:0.95em;">Gift Type</th>
+                            <th style="font-size:0.95em;">Total Received</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-size:0.95em;">Birthday Gift</td>
+                            <td style="font-size:0.95em;"><strong>{{ total_birthday }}</strong> <span class="text-muted">(members)</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-size:0.95em;">Mooncake Gift</td>
+                            <td style="font-size:0.95em;"><strong>{{ total_mooncake }}</strong> <span class="text-muted">(members)</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-size:0.95em;">Tet Gift</td>
+                            <td style="font-size:0.95em;"><strong>{{ total_tet }}</strong> <span class="text-muted">(members)</span></td>
+                        <tr>
+                            <td style="font-size:0.95em;">Lucky Money Gift</td>
+                            <td style="font-size:0.95em;"><strong>{{ total_luckymoney }}</strong> <span class="text-muted">(members)</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-size:0.95em;">June Children Gift</td>
+                            <td style="font-size:0.95em;"><strong>{{ total_june_children }}</strong> <span class="text-muted">(children)</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-size:0.95em;">Autumn Children Gift</td>
+                            <td style="font-size:0.95em;"><strong>{{ total_autumn_children }}</strong> <span class="text-muted">(children)</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

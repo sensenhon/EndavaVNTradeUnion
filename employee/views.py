@@ -1,3 +1,5 @@
+# Statistics view for yearly gift summary
+from django.views.decorators.http import require_GET
 import io
 import json
 import pandas as pd
@@ -421,6 +423,48 @@ def logout_view(request):
 	logout(request)
 	return redirect('home')
 
+@require_GET
+def statistics_view(request):
+	# Get year from GET param, default to current year
+	year = int(request.GET.get('year', datetime.date.today().year))
+
+	# Total received gifts for employees
+	total_birthday = EmployeeGiftYear.objects.filter(year=year, gift_type='birthday', received=True).count()
+	total_mooncake = EmployeeGiftYear.objects.filter(year=year, gift_type='mooncake', received=True).count()
+	total_tet = EmployeeGiftYear.objects.filter(year=year, gift_type='tet', received=True).count()
+	total_luckymoney = EmployeeGiftYear.objects.filter(year=year, gift_type='luckymoney', received=True).count()
+
+	# Children gifts: count by child
+	total_june_children = Children.objects.filter(june_gift_received=True, employee__employeegiftyear__year=year).count()
+	total_autumn_children = Children.objects.filter(autumn_gift_received=True, employee__employeegiftyear__year=year).count()
+
+	# For year selection dropdown
+	all_years = EmployeeGiftYear.objects.values_list('year', flat=True).distinct().order_by('-year')
+
+	# Total permanent members for selected year (membership_type_by_admin.name == 'Yes' and membership_since <= year)
+	total_permanent = Employee.objects.filter(
+		membership_type_by_admin__name__iexact='Yes',
+		membership_since__year__lte=year
+	).count()
+
+	# User info for navbar
+	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+
+	return render(request, 'employee/statistics.html', {
+		'selected_year': year,
+		'all_years': all_years,
+		'total_birthday': total_birthday,
+		'total_mooncake': total_mooncake,
+		'total_tet': total_tet,
+		'total_luckymoney': total_luckymoney,
+		'total_june_children': total_june_children,
+		'total_autumn_children': total_autumn_children,
+		'total_permanent': total_permanent,
+		'is_superuser': is_superuser,
+		'is_committee': is_committee,
+	})
+
 @login_required
 def edit_children(request):
 	emp_id = request.GET.get('id') or request.POST.get('id')
@@ -497,7 +541,6 @@ def change_password(request):
 	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
 	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
 	return render(request, 'employee/change_password.html', {'form': form, 'is_superuser': is_superuser, 'is_committee': is_committee})
-
 
 @login_required
 def edit_profile(request):
@@ -635,7 +678,6 @@ def edit_profile(request):
 		'employee': employee
 	})
 
-
 @login_required
 def profile(request):
 	emp_id = request.GET.get('id')
@@ -717,7 +759,6 @@ def profile(request):
 	if is_superuser or is_committee:
 		context['membership_type_by_admin'] = employee.membership_type_by_admin if hasattr(employee, 'membership_type_by_admin') else None
 	return render(request, 'employee/profile.html', context)
-
 
 def login_view(request):
 	if request.method == 'POST':
