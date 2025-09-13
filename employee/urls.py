@@ -29,4 +29,5 @@ urlpatterns = [
     path('update_june_gift/', views.update_june_gift, name='update_june_gift'),
     path('update_autumn_gift/', views.update_autumn_gift, name='update_autumn_gift'),
     path('get_financial_options/', views.get_financial_options, name='get_financial_options'),
+    path('financial/export/', views.export_financial_report, name='export_financial_report'),
 ]

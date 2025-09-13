@@ -1,10 +1,13 @@
 {% extends 'employee/base.html' %}
-{% block title %}Financial{% endblock %}
+{% block title %}TU Financial{% endblock %}
 {% block content %}
 <div class="container mt-5 page-content">
     <h2 class="text-center mb-4">Financial Management</h2>
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="row mb-3">
+                <h5 class="mb-2" style="margin-left:16px; width:calc(100% - 32px);">Transaction Submission</h5>
+            </div>
             <form method="post" enctype="multipart/form-data" class="card shadow-sm mb-4" id="financial-form" style="font-size:0.95em;">
                 {% csrf_token %}
                 <div class="card-body">
@@ -16,7 +19,7 @@
                     </div>
                     <div class="mb-3 row align-items-center">
                         <div class="col-4">{{ form.category.label_tag }} <span class="text-danger">*</span></div>
-                        <div class="col-8"><select id="id_category" name="category" class="form-select" style="width:380px; min-width:180px;"> </select></div>
+                        <div class="col-8"><select id="id_category" name="category" class="form-select" style="max-width:450px; min-width:450px;"> </select></div>
                         {{ form.category.errors }}
                     </div>
                     <div class="mb-3 row align-items-center">
@@ -31,7 +34,7 @@
                     </div>
                     <div class="mb-3 row align-items-center">
                         <div class="col-4">{{ form.description.label_tag }} <span class="text-danger">*</span></div>
-                        <div class="col-8"><select id="id_description" name="description" class="form-select" style="width:380px; min-width:180px;"> </select></div>
+                        <div class="col-8"><select id="id_description" name="description" class="form-select" style="max-width:450px; min-width:450px;"> </select></div>
                         {{ form.description.errors }}
                     </div>
                     <div class="mb-3 row align-items-center">
@@ -57,53 +60,185 @@
                 </div>
             </form>
         </div>
+        <div class="col-lg-4">
+            <div class="row mb-3 align-items-center" style="flex-wrap:nowrap;">
+                <div class="col-auto" style="min-width:150px;">
+                    <h5 class="mb-2">Report {{ tu_summary.year }}</h5>
+                </div>
+                <div class="col-auto ms-auto" style="min-width:270px;">
+                    <form method="get" class="d-flex align-items-center" style="gap:8px;">
+                        <input type="number" name="year" value="{{ year }}" class="form-control form-control-sm" style="width:70px;" placeholder="Year">
+                        <input type="number" name="month" value="{{ month }}" min="1" max="12" class="form-control form-control-sm" style="width:80px;" placeholder="Month">
+                        <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center justify-content-center" style="height:32px; width:32px; padding:0;">
+                            <i class="bi bi-funnel">Go</i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="card card-body shadow-sm mb-3" style="font-size:0.95em;">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">Opening Balance: <strong class="tu-amount">{{ tu_summary.opening_balance }}</strong> VND</li>
+                    <li class="list-group-item">Total Income: <strong class="tu-amount">{{ tu_summary.total_income }}</strong> VND</li>
+                    <li class="list-group-item">Total Expense: <strong class="tu-amount">{{ tu_summary.total_expense }}</strong> VND</li>
+                    <li class="list-group-item">Closing Balance: <strong class="tu-amount">{{ tu_summary.closing_balance }}</strong> VND</li>
+                </ul>
+            </div>
+            <div class="mt-3 text-end">
+                <form method="get" action="{% url 'export_financial_report' %}">
+                    <input type="hidden" name="year" value="{{ year }}">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-file-earmark-excel"></i> Export Financial Report
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="row mt-4" style="font-size:0.8em;">
-        <div class="col-lg-10 mx-auto">
-            <h4 class="mb-3">Recent Transactions</h4>
-            <table class="table table-bordered table-striped">
-                <thead class="table-light">
-                    <tr>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th>Category</th>
-                        <th>Payment ID</th>
-                        <th>Description</th>
-                        <th>Details</th>
-                        <th>Amount</th>
-                        <th>Evidence</th>
-                        <th>User</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for t in transactions %}
-                    <tr>
-                        <td>{{ t.date }}</td>
-                        <td>{{ t.get_financial_type_display }}</td>
-                        <td>{{ t.category }}</td>
-                        <td>{{ t.payment_id }}</td>
-                        <td>{{ t.description }}</td>
-                        <td>{{ t.details }}</td>
-                        <td class="amount-cell">{{ t.amount }}</td>
-                        <td>
-                            {% if t.payment_evidence %}
-                                <a href="{{ t.payment_evidence.url }}" target="_blank">
-                                    <img src="{{ t.payment_evidence.url }}" alt="evidence" style="max-width:80px; max-height:80px;">
-                                </a>
-                            {% else %}-{% endif %}
-                        </td>
-                        <td>{{ t.created_by }}</td>
-                        <td>
-                            <a href="{% url 'edit_financial_transaction' t.id %}" class="btn btn-warning" style="font-size:0.7em; padding:1px 4px; margin:0; line-height:1;">Edit</a>
-                            <a href="{% url 'delete_financial_transaction' t.id %}" class="btn btn-danger" style="font-size:0.7em; padding:1px 4px; margin:0; line-height:1;" onclick="return confirm('Bạn có chắc muốn xóa giao dịch này?');">Delete</a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="10" class="text-center">No transactions yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="row">
+        <div class="col-12">
+            <div class="row mt-4" style="font-size:0.8em;">
+                <div class="col-12">
+                    <h4 class="mb-3">Recent Transactions</h4>
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Category</th>
+                                <th>Payment ID</th>
+                                <th>Description</th>
+                                <th>Details</th>
+                                <th>Amount</th>
+                                <th>Evidence</th>
+                                <th>User</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in transactions %}
+                            <tr>
+                                <td>{{ t.date }}</td>
+                                <td>{{ t.get_financial_type_display }}</td>
+                                <td>{{ t.category }}</td>
+                                <td>{{ t.payment_id }}</td>
+                                <td>{{ t.description }}</td>
+                                <td>{{ t.details }}</td>
+                                <td class="amount-cell">{{ t.amount }}</td>
+                                <td>
+                                    {% if t.payment_evidence %}
+                                        <a href="{{ t.payment_evidence.url }}" target="_blank">
+                                            <img src="{{ t.payment_evidence.url }}" alt="evidence" style="max-width:80px; max-height:80px;">
+                                        </a>
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td>{{ t.created_by }}</td>
+                                <td>
+                                    <a href="{% url 'edit_financial_transaction' t.id %}" class="btn btn-warning" style="font-size:0.7em; padding:1px 4px; margin:0; line-height:1;">Edit</a>
+                                    <a href="{% url 'delete_financial_transaction' t.id %}" class="btn btn-danger" style="font-size:0.7em; padding:1px 4px; margin:0; line-height:1;" onclick="return confirm('Bạn có chắc muốn xóa giao dịch này?');">Delete</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="10" class="text-center">No transactions yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="row mt-4" style="font-size:0.8em;">
+                <div class="col-12">
+                    <h4 class="mb-3">Income Overview</h4>
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th style="width: 300px;">Category / Description</th>
+                                <th style="width: 140px;">Estimated Budget</th>
+                                <th style="width: 140px;">Total Amount</th>
+                                <th style="width: 100px;">Used (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in income_summary %}
+                                {% if row.descriptions %}
+                                    <tr>
+                                        <td style="font-weight:bold;">{{ row.category }}</td>
+                                        <td style="font-weight:bold;" class="amount-cell">{{ row.estimated_expense_category|default:"0" }}</td>
+                                        <td style="font-weight:bold;" class="amount-cell">{{ row.total_amount|default_if_none:"0" }}</td>
+                                        <td style="font-weight:bold;">{{ row.percentage|default_if_none:"0" }}</td>
+                                    </tr>
+                                    {% for desc_row in row.descriptions %}
+                                        <tr>
+                                            <td style="padding-left:32px;">{{ desc_row.desc }}</td>
+                                            <td class="amount-cell">{{ desc_row.estimated_expense_description|default:"0" }}</td>
+                                            <td class="amount-cell">{{ desc_row.amount|default_if_none:"0" }}</td>
+                                            <td>{{ desc_row.desc_percentage|default_if_none:"0" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td style="font-weight:bold;">{{ row.category }}</td>
+                                        <td style="font-weight:bold;" class="amount-cell">{{ row.estimated_expense_category|default:"0" }}</td>
+                                        <td style="font-weight:bold;" class="amount-cell">0</td>
+                                        <td style="font-weight:bold;">{{ row.percentage }}</td>
+                                    </tr>
+                                {% endif %}
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center">No data</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="row mt-4" style="font-size:0.8em;">
+                <div class="col-12">
+                    <h4 class="mb-3">Outcome Overview</h4>
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th style="width: 300px;">Category / Description</th>
+                                <th style="width: 140px;">Estimated Budget</th>
+                                <th style="width: 140px;">Total Amount</th>
+                                <th style="width: 100px;">Used (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in outcome_summary %}
+                                {% if row.descriptions %}
+                                    <tr>
+                                        <td style="font-weight:bold;">{{ row.category }}</td>
+                                        <td style="font-weight:bold;" class="amount-cell">{{ row.estimated_expense_category|floatformat:0 }}</td>
+                                        <td style="font-weight:bold;" class="amount-cell">{{ row.total_amount|default_if_none:"0" }}</td>
+                                        <td style="font-weight:bold;">{{ row.percentage|default_if_none:"0" }}</td>
+                                    </tr>
+                                    {% for desc_row in row.descriptions %}
+                                        <tr>
+                                            <td style="padding-left:32px;">{{ desc_row.desc }}</td>
+                                            <td class="amount-cell">{{ desc_row.estimated_expense_description|floatformat:0 }}</td>
+                                            <td class="amount-cell">{{ desc_row.amount|default_if_none:"0" }}</td>
+                                            <td>{{ desc_row.desc_percentage|default_if_none:"0" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td style="font-weight:bold;">{{ row.category }}</td>
+                                        <td style="font-weight:bold;" class="amount-cell">{{ row.estimated_expense_category|floatformat:0 }}</td>
+                                        <td style="font-weight:bold;" class="amount-cell">0</td>
+                                        <td style="font-weight:bold;">{{ row.percentage }}</td>
+                                    </tr>
+                                {% endif %}
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center">No data</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -116,25 +251,21 @@ input::placeholder {
     function formatAmount(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
-    function formatAmountInput(input) {
-        let val = input.value.replace(/,/g, '');
-        if(val && !isNaN(val) && val !== "") {
-            input.value = Number(val).toLocaleString('en-US');
-        } else if(val === "") {
-            input.value = "";
-        }
-    }
     document.addEventListener('DOMContentLoaded', function() {
         function updateDropdowns() {
             var ftype = document.getElementById('id_financial_type').value;
+            var catSelect = document.getElementById('id_category');
+            var descSelect = document.getElementById('id_description');
+            if (!ftype) {
+                catSelect.innerHTML = '<option value="">-- Select Category --</option>';
+                descSelect.innerHTML = '<option value="">-- Select Description --</option>';
+                return;
+            }
             fetch('/get_financial_options/?type=' + ftype)
                 .then(response => response.json())
                 .then(data => {
-                    var catSelect = document.getElementById('id_category');
-                    var descSelect = document.getElementById('id_description');
                     catSelect.innerHTML = '';
                     descSelect.innerHTML = '';
-                    // Add default empty option
                     var catDefault = document.createElement('option');
                     catDefault.value = '';
                     catDefault.text = '-- Select Category --';
@@ -157,8 +288,38 @@ input::placeholder {
                     });
                 });
         }
+        function updateDescriptionsByCategory() {
+            var ftype = document.getElementById('id_financial_type').value;
+            var categoryId = document.getElementById('id_category').value;
+            var descSelect = document.getElementById('id_description');
+            if (!categoryId) {
+                descSelect.innerHTML = '<option value="">-- Select Description --</option>';
+                return;
+            }
+            fetch('/get_financial_options/?type=' + ftype + '&category=' + categoryId)
+                .then(response => response.json())
+                .then(data => {
+                    descSelect.innerHTML = '';
+                    var descDefault = document.createElement('option');
+                    descDefault.value = '';
+                    descDefault.text = '-- Select Description --';
+                    descSelect.appendChild(descDefault);
+                    data.descriptions.forEach(function(opt) {
+                        var option = document.createElement('option');
+                        option.value = opt.id;
+                        option.text = opt.text;
+                        descSelect.appendChild(option);
+                    });
+                });
+        }
         document.getElementById('id_financial_type').addEventListener('change', updateDropdowns);
+        document.getElementById('id_category').addEventListener('change', updateDescriptionsByCategory);
         updateDropdowns();
+        // Format TU financial summary
+        document.querySelectorAll('.tu-amount').forEach(function(el) {
+            var val = el.textContent.trim();
+            if(val && !isNaN(val)) el.textContent = formatAmount(val);
+        });
         // Format amount in transaction table
         document.querySelectorAll('td.amount-cell').forEach(function(td) {
             var val = td.textContent.trim();

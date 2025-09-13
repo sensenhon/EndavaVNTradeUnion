@@ -155,6 +155,7 @@ class FinancialCategory(models.Model):
 	code = models.CharField(max_length=20, unique=True)
 	name = models.CharField(max_length=100)
 	type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+	estimated_expense = models.DecimalField(max_digits=15, decimal_places=2, default=0, help_text='Estimated expense/income for this category')
 
 	def __str__(self):
 		return f"{self.code} - {self.name}"
@@ -165,31 +166,129 @@ class FinancialDescription(models.Model):
 		('income', 'Thu'),
 		('expense', 'Chi'),
 	)
+	category = models.ForeignKey(FinancialCategory, on_delete=models.CASCADE, related_name='descriptions')
 	description = models.CharField(max_length=255, unique=True)
 	type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+	estimated_expense = models.DecimalField(default=0, max_digits=15, decimal_places=2, help_text='Estimated budget for this description')
 
 	def __str__(self):
 		return f"{self.description}"
 
-class FinancialTransaction(models.Model):
-	FINANCIAL_TYPE_CHOICES = (
-		('income', 'Thu'),
-		('expense', 'Chi'),
-	)
-	financial_type = models.CharField(max_length=10, choices=FINANCIAL_TYPE_CHOICES)
-	category = models.ForeignKey(FinancialCategory, on_delete=models.PROTECT)
-	date = models.DateField()
-	payment_id = models.CharField(max_length=255)
-	description = models.ForeignKey(FinancialDescription, on_delete=models.PROTECT)
-	details = models.CharField(max_length=255)
-	amount = models.DecimalField(max_digits=15, decimal_places=0)
-	payment_evidence = models.ImageField(upload_to='financial_evidence/', null=True, blank=True)
-	created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True)
-	created_at = models.DateTimeField(auto_now_add=True)
+class TUFinancialTransaction(models.Model):
+    FINANCIAL_TYPE_CHOICES = (
+        ('income', 'Thu'),
+        ('expense', 'Chi'),
+    )
+    category = models.ForeignKey(FinancialCategory, on_delete=models.PROTECT)
+    date = models.DateField()
+    payment_id = models.CharField(max_length=255)
+    description = models.ForeignKey(FinancialDescription, on_delete=models.PROTECT)
+    details = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=15, decimal_places=0)
+    financial_type = models.CharField(max_length=10, choices=FINANCIAL_TYPE_CHOICES)
+    payment_evidence = models.ImageField(upload_to='financial_evidence/', null=True, blank=True)
+    created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"TU {self.get_financial_type_display()} - {self.category} - {self.amount} VND on {self.date}"
 
-	@property
-	def final_details(self):
-		return f"{self.description.description} {self.details}".strip()
+class FloorFinancialTransaction(models.Model):
+    FINANCIAL_TYPE_CHOICES = (
+        ('income', 'Thu'),
+        ('expense', 'Chi'),
+    )
+    floor = models.ForeignKey('Floor', on_delete=models.CASCADE)
+    category = models.ForeignKey(FinancialCategory, on_delete=models.PROTECT)
+    date = models.DateField()
+    payment_id = models.CharField(max_length=255)
+    description = models.ForeignKey(FinancialDescription, on_delete=models.PROTECT)
+    details = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=15, decimal_places=0)
+    financial_type = models.CharField(max_length=10, choices=FINANCIAL_TYPE_CHOICES)
+    payment_evidence = models.ImageField(upload_to='financial_evidence/', null=True, blank=True)
+    created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"Floor {self.floor} {self.get_financial_type_display()} - {self.category} - {self.amount} VND on {self.date}"
 
-	def __str__(self):
-		return f"{self.get_financial_type_display()} - {self.category} - {self.amount} VND on {self.date}"
+class ClubFinancialTransaction(models.Model):
+    FINANCIAL_TYPE_CHOICES = (
+        ('income', 'Thu'),
+        ('expense', 'Chi'),
+    )
+    club_name = models.CharField(max_length=100)
+    category = models.ForeignKey(FinancialCategory, on_delete=models.PROTECT)
+    date = models.DateField()
+    payment_id = models.CharField(max_length=255)
+    description = models.ForeignKey(FinancialDescription, on_delete=models.PROTECT)
+    details = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=15, decimal_places=0)
+    financial_type = models.CharField(max_length=10, choices=FINANCIAL_TYPE_CHOICES)
+    payment_evidence = models.ImageField(upload_to='financial_evidence/', null=True, blank=True)
+    created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"Club {self.club_name} {self.get_financial_type_display()} - {self.category} - {self.amount} VND on {self.date}"
+
+class FinancialOpeningBalance(models.Model):
+    TYPE_CHOICES = (
+        ('tu', 'TU'),
+        ('floor', 'Floor'),
+        ('club', 'Club'),
+    )
+    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    year = models.PositiveIntegerField()
+    month = models.PositiveIntegerField(null=True, blank=True)
+    opening_balance = models.DecimalField(max_digits=15, decimal_places=0)
+    note = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        unique_together = ('type', 'year', 'month')
+
+    def __str__(self):
+        if self.month:
+            return f"Opening Balance {self.get_type_display()} {self.month}/{self.year}: {self.opening_balance} VND"
+        return f"Opening Balance {self.get_type_display()} {self.year}: {self.opening_balance} VND"
+
+class TUFinancialReport(models.Model):
+    year = models.PositiveIntegerField()
+    month = models.PositiveIntegerField(null=True, blank=True)
+    opening_balance = models.DecimalField(max_digits=15, decimal_places=0)
+    closing_balance = models.DecimalField(max_digits=15, decimal_places=0, null=True, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True)
+    def __str__(self):
+        if self.month:
+            return f"TU Report {self.month}/{self.year}"
+        return f"TU Report {self.year}"
+
+class FloorFinancialReport(models.Model):
+    floor = models.ForeignKey('Floor', on_delete=models.CASCADE)
+    year = models.PositiveIntegerField()
+    month = models.PositiveIntegerField(null=True, blank=True)
+    opening_balance = models.DecimalField(max_digits=15, decimal_places=0)
+    closing_balance = models.DecimalField(max_digits=15, decimal_places=0, null=True, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True)
+    def __str__(self):
+        if self.month:
+            return f"Floor {self.floor} Report {self.month}/{self.year}"
+        return f"Floor {self.floor} Report {self.year}"
+
+class ClubFinancialReport(models.Model):
+    club_name = models.CharField(max_length=100)
+    year = models.PositiveIntegerField()
+    month = models.PositiveIntegerField(null=True, blank=True)
+    opening_balance = models.DecimalField(max_digits=15, decimal_places=0)
+    closing_balance = models.DecimalField(max_digits=15, decimal_places=0, null=True, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True)
+    def __str__(self):
+        if self.month:
+            return f"Club {self.club_name} Report {self.month}/{self.year}"
+        return f"Club {self.club_name} Report {self.year}"

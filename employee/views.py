@@ -17,10 +17,16 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.forms import modelformset_factory, inlineformset_factory, modelformset_factory
-from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee, EmployeeGiftYear, FinancialCategory, FinancialTransaction, FinancialDescription
+from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee, EmployeeGiftYear, FinancialCategory, TUFinancialTransaction, FinancialDescription
 from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.views.decorators.http import require_POST
+from django.utils import timezone
+from django.conf import settings
+import openpyxl
+from openpyxl import load_workbook
+from django.http import FileResponse
+import os
 
 # Dùng chung cho dashboard và export
 DISPLAY_FIELDS = [
@@ -75,6 +81,37 @@ def get_children_autumn_gift_info(emp, autumn_date):
 			children_with_age.append({'child': child, 'age': age})
 		result[emp_item.id] = children_with_age
 	return result
+
+def build_summary(year, type_name):
+		categories = FinancialCategory.objects.filter(type=type_name).order_by('code')
+		summary = []
+		for cat in categories:
+			descriptions = FinancialDescription.objects.filter(category=cat)
+			desc_rows = []
+			total_spent = 0
+			estimated_cat = cat.estimated_expense if cat.estimated_expense else 0
+			for desc in descriptions:
+				amount = TUFinancialTransaction.objects.filter(date__year=year, category=cat, description=desc).aggregate(total=Sum('amount'))['total']
+				if not amount:
+					amount = 0
+				estimated_expense_description = desc.estimated_expense if hasattr(desc, 'estimated_expense') and desc.estimated_expense is not None else 0
+				desc_percentage = (amount / estimated_expense_description * 100) if estimated_expense_description and estimated_expense_description > 0 else 0
+				desc_rows.append({
+					'desc': str(desc),
+					'amount': amount,
+					'desc_percentage': round(desc_percentage, 2),
+					'estimated_expense_description': estimated_expense_description
+				})
+				total_spent += amount
+			percent = (total_spent / estimated_cat * 100) if estimated_cat and estimated_cat > 0 else 0
+			summary.append({
+				'category': str(cat),
+				'descriptions': desc_rows,
+				'estimated_expense_category': estimated_cat,
+				'total_amount': total_spent,
+				'percentage': round(percent, 2)
+			})
+		return summary
 
 @user_passes_test(is_committee_or_superuser)
 @user_passes_test(is_committee_or_superuser)
@@ -955,9 +992,9 @@ def update_autumn_gift(request):
 	except Children.DoesNotExist:
 		return JsonResponse({'success': False, 'error': 'Child not found'})
 	
-class FinancialTransactionForm(forms.ModelForm):
+class TUFinancialTransactionForm(forms.ModelForm):
 	class Meta:
-		model = FinancialTransaction
+		model = TUFinancialTransaction
 		fields = ['financial_type', 'category', 'date', 'payment_id', 'description', 'details', 'amount', 'payment_evidence']
 		widgets = {
 			'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
@@ -981,24 +1018,56 @@ class FinancialTransactionForm(forms.ModelForm):
 
 @login_required
 def financial_view(request):
-	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
-	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
-	if not (is_superuser or is_committee):
-		return redirect('home')
-	form = FinancialTransactionForm(request.POST or None, request.FILES or None)
-	if request.method == 'POST' and form.is_valid():
-		transaction = form.save(commit=False)
-		transaction.created_by = Employee.objects.filter(user=request.user).first()
-		transaction.save()
-		messages.success(request, 'Financial transaction added!')
-		return redirect('financial')
-	transactions = FinancialTransaction.objects.order_by('-date', '-created_at')[:50]
-	return render(request, 'employee/financial.html', {
-		'form': form,
-		'transactions': transactions,
-		'is_superuser': is_superuser,
-		'is_committee': is_committee,
-	})
+    is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+    is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+    if not (is_superuser or is_committee):
+        return redirect('home')
+    # Filter by year/month
+    year = int(request.GET.get('year', timezone.now().year))
+    month = request.GET.get('month')
+    tu_summary = get_tu_financial_summary(year, month)
+    transactions = TUFinancialTransaction.objects.filter(date__year=year)
+    if month:
+        transactions = transactions.filter(date__month=month)
+    transactions = transactions.order_by('-date', '-created_at')[:50]
+    # Summary by financial_type, category, description (year only)
+    summary_table = TUFinancialTransaction.objects.filter(date__year=year)
+    summary_table = summary_table.values('financial_type', 'category', 'description').annotate(total_amount=Sum('amount')).order_by('financial_type', 'category', 'description')
+    # Convert category and description IDs to string for template
+    for row in summary_table:
+        cat_obj = FinancialCategory.objects.filter(pk=row['category']).first()
+        desc_obj = FinancialDescription.objects.filter(pk=row['description']).first()
+        row['category'] = str(cat_obj) if cat_obj else row['category']
+        row['description'] = str(desc_obj) if desc_obj else row['description']
+        row['estimated_expense'] = cat_obj.estimated_expense if cat_obj else 0
+    form = TUFinancialTransactionForm(request.POST or None, request.FILES or None)
+    if request.method == 'POST' and form.is_valid():
+        transaction = form.save(commit=False)
+        transaction.created_by = Employee.objects.filter(user=request.user).first()
+        transaction.save()
+        messages.success(request, 'Financial transaction added!')
+        return redirect('financial')
+    # Category summary for all categories (show all, even if no transactions)
+    categories_income = FinancialCategory.objects.filter(type='income').order_by('code')
+    categories_expense = FinancialCategory.objects.filter(type='expense').order_by('code')
+    total_amount_by_cat = TUFinancialTransaction.objects.filter(date__year=year).values('category').annotate(total=Sum('amount'))
+    total_amount_map = {row['category']: row['total'] for row in total_amount_by_cat}
+    # Build summary for all Category/Description pairs (Income/Outcome)
+    income_summary = build_summary(year, 'income')
+    outcome_summary = build_summary(year, 'expense')
+    return render(request, 'employee/financial.html', {
+        'form': form,
+        'transactions': transactions,
+        'tu_summary': tu_summary,
+        'year': year,
+        'month': month,
+        'months': list(range(1, 13)),
+        'is_superuser': is_superuser,
+        'is_committee': is_committee,
+        'summary_table': summary_table,
+        'income_summary': income_summary,
+        'outcome_summary': outcome_summary,
+    })
 
 # Edit financial transaction
 @login_required
@@ -1007,8 +1076,8 @@ def edit_financial_transaction(request, pk):
 	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
 	if not (is_superuser or is_committee):
 		return redirect('home')
-	transaction = FinancialTransaction.objects.get(pk=pk)
-	form = FinancialTransactionForm(request.POST or None, request.FILES or None, instance=transaction)
+	transaction = TUFinancialTransaction.objects.get(pk=pk)
+	form = TUFinancialTransactionForm(request.POST or None, request.FILES or None, instance=transaction)
 	if request.method == 'POST' and form.is_valid():
 		transaction = form.save(commit=False)
 		transaction.created_by = Employee.objects.filter(user=request.user).first()
@@ -1017,7 +1086,7 @@ def edit_financial_transaction(request, pk):
 		return redirect('financial')
 	return render(request, 'employee/financial.html', {
 		'form': form,
-		'transactions': FinancialTransaction.objects.order_by('-date', '-created_at')[:50],
+		'transactions': TUFinancialTransaction.objects.order_by('-date', '-created_at')[:50],
 		'edit_mode': True,
 		'edit_id': pk,
 		'is_superuser': is_superuser,
@@ -1031,17 +1100,66 @@ def delete_financial_transaction(request, pk):
 	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
 	if not (is_superuser or is_committee):
 		return redirect('home')
-	transaction = FinancialTransaction.objects.get(pk=pk)
+	transaction = TUFinancialTransaction.objects.get(pk=pk)
 	transaction.delete()
 	messages.success(request, 'Financial transaction deleted!')
 	return redirect('financial')
 
 @login_required
 def get_financial_options(request):
-    ftype = request.GET.get('type')
-    categories = FinancialCategory.objects.filter(type=ftype)
-    descriptions = FinancialDescription.objects.filter(type=ftype)
-    return JsonResponse({
-        'categories': [{'id': c.id, 'name': str(c)} for c in categories],
-        'descriptions': [{'id': d.id, 'text': str(d)} for d in descriptions],
-    })
+	ftype = request.GET.get('type')
+	category_id = request.GET.get('category')
+	categories = FinancialCategory.objects.filter(type=ftype)
+	if category_id:
+		descriptions = FinancialDescription.objects.filter(category_id=category_id)
+	else:
+		descriptions = FinancialDescription.objects.filter(type=ftype)
+	return JsonResponse({
+		'categories': [{'id': c.id, 'name': str(c)} for c in categories],
+		'descriptions': [{'id': d.id, 'text': str(d)} for d in descriptions],
+	})
+
+def get_tu_financial_summary(year, month=None):
+    from .models import TUFinancialTransaction, FinancialOpeningBalance
+    opening_obj = FinancialOpeningBalance.objects.filter(type='tu', year=year, month__isnull=True).first()
+    opening_balance = opening_obj.opening_balance if opening_obj else 0
+    transactions = TUFinancialTransaction.objects.filter(date__year=year)
+    if month:
+        transactions = transactions.filter(date__month=month)
+    total_income = sum(t.amount for t in transactions if t.financial_type == 'income')
+    total_expense = sum(t.amount for t in transactions if t.financial_type == 'expense')
+    closing_balance = opening_balance + total_income - total_expense
+    return {
+        'year': year,
+        'month': month,
+        'opening_balance': opening_balance,
+        'total_income': total_income,
+        'total_expense': total_expense,
+        'closing_balance': closing_balance,
+    }
+
+@login_required
+def export_financial_report(request):
+    year = int(request.GET.get('year', datetime.datetime.now().year))
+    expenses = TUFinancialTransaction.objects.filter(date__year=year, financial_type='expense').order_by('date')
+    # Path to your Excel template (update if needed)
+    template_path = os.path.join(settings.BASE_DIR, 'employee', 'employee_import_template.xlsx')
+    wb = load_workbook(template_path)
+    ws = wb.active
+    # Write data starting from row 2 (assuming row 1 is header)
+    row = 2
+    for t in expenses:
+        ws.cell(row=row, column=1, value=t.date.strftime('%Y-%m-%d'))
+        ws.cell(row=row, column=2, value=str(t.category))
+        ws.cell(row=row, column=3, value=t.payment_id)
+        ws.cell(row=row, column=4, value=t.description)
+        ws.cell(row=row, column=5, value=t.details)
+        ws.cell(row=row, column=6, value=t.amount)
+        ws.cell(row=row, column=7, value=str(t.created_by) if t.created_by else '')
+        row += 1
+    filename = f'EndavaTU_BaoCaoThuChiYear{year}.xlsx'
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    response = FileResponse(output, as_attachment=True, filename=filename)
+    return response
