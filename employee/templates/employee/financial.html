@@ -12,42 +12,63 @@
                 {% csrf_token %}
                 <div class="card-body">
                     {{ form.non_field_errors }}
+                    <!-- Financial Type -->
                     <div class="mb-3 row align-items-center">
-                        <div class="col-4">{{ form.financial_type.label_tag }} <span class="text-danger">*</span></div>
-                        <div class="col-8">{{ form.financial_type }}</div>
+                        <div class="col-4"><label for="id_financial_type">Financial Type <span class="text-danger">*</span></label></div>
+                        <div class="col-8">
+                            <select name="financial_type" id="id_financial_type" class="form-control form-control-sm">
+                                {% for choice in form.financial_type.field.choices %}
+                                    <option value="{{ choice.0 }}" {% if form.financial_type.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         {{ form.financial_type.errors }}
                     </div>
+                    <!-- Category -->
                     <div class="mb-3 row align-items-center">
-                        <div class="col-4">{{ form.category.label_tag }} <span class="text-danger">*</span></div>
-                        <div class="col-8"><select id="id_category" name="category" class="form-select" style="max-width:450px; min-width:450px;"> </select></div>
+                        <div class="col-4"><label for="id_category">Category <span class="text-danger">*</span></label></div>
+                        <div class="col-8">
+                            <select id="id_category" name="category" class="form-control form-control-sm" style="max-width:450px; min-width:450px;"></select>
+                        </div>
                         {{ form.category.errors }}
                     </div>
+                    <!-- Description -->
                     <div class="mb-3 row align-items-center">
-                        <div class="col-4">{{ form.date.label_tag }} <span class="text-danger">*</span></div>
-                        <div class="col-8">{{ form.date }}</div>
-                        {{ form.date.errors }}
-                    </div>
-                    <div class="mb-3 row align-items-center">
-                        <div class="col-4">{{ form.payment_id.label_tag }} <span class="text-danger">*</span></div>
-                        <div class="col-8">{{ form.payment_id }}</div>
-                        {{ form.payment_id.errors }}
-                    </div>
-                    <div class="mb-3 row align-items-center">
-                        <div class="col-4">{{ form.description.label_tag }} <span class="text-danger">*</span></div>
-                        <div class="col-8"><select id="id_description" name="description" class="form-select" style="max-width:450px; min-width:450px;"> </select></div>
+                        <div class="col-4"><label for="id_description">Description <span class="text-danger">*</span></label></div>
+                        <div class="col-8">
+                            <select id="id_description" name="description" class="form-control form-control-sm" style="max-width:450px; min-width:450px;"></select>
+                        </div>
                         {{ form.description.errors }}
                     </div>
+                    <!-- Date -->
                     <div class="mb-3 row align-items-center">
-                        <div class="col-4">{{ form.details.label_tag }} <span class="text-danger">*</span></div>
+                        <div class="col-4"><label for="id_date">Date <span class="text-danger">*</span></label></div>
                         <div class="col-8">
-                            {{ form.details }}
+                            <input type="date" name="date" id="id_date" class="form-control form-control-sm" value="{{ form.date.value|default:'' }}">
+                        </div>
+                        {{ form.date.errors }}
+                    </div>
+                    <!-- Payment ID -->
+                    <div class="mb-3 row align-items-center">
+                        <div class="col-4"><label for="id_payment_id">Payment ID <span class="text-danger">*</span></label></div>
+                        <div class="col-8">
+                            <input type="text" name="payment_id" id="id_payment_id" class="form-control form-control-sm" value="{{ form.payment_id.value|default:'' }}">
+                        </div>
+                        {{ form.payment_id.errors }}
+                    </div>
+                    <!-- Details -->
+                    <div class="mb-3 row align-items-center">
+                        <div class="col-4"><label for="id_details">Details <span class="text-danger">*</span></label></div>
+                        <div class="col-8">
+                            <textarea name="details" id="id_details" class="form-control form-control-sm" rows="2">{{ form.details.value|default:'' }}</textarea>
                         </div>
                         {{ form.details.errors }}
                     </div>
+                    <!-- Amount -->
                     <div class="mb-3 row align-items-center">
-                        <div class="col-4">{{ form.amount.label_tag }} <span class="text-danger">*</span></div>
+                        <div class="col-4"><label for="id_amount">Amount <span class="text-danger">*</span></label></div>
                         <div class="col-8">
-                            <input type="text" name="amount" id="id_amount" class="form-control" required style="width: 180px; font-size: 0.95rem;" min="0" inputmode="numeric" pattern="[0-9,]*">
+                            <input type="text" name="amount" id="id_amount" class="form-control form-control-sm" required style="width: 180px; font-size: 0.95rem;" min="0" inputmode="numeric" pattern="[0-9,]*" value="{{ form.amount.value|default:'' }}">
                         </div>
                         {{ form.amount.errors }}
                     </div>

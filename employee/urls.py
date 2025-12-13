@@ -30,4 +30,7 @@ urlpatterns = [
     path('update_autumn_gift/', views.update_autumn_gift, name='update_autumn_gift'),
     path('get_financial_options/', views.get_financial_options, name='get_financial_options'),
     path('financial/export/', views.export_financial_report, name='export_financial_report'),
+    path('club-financial/', views.club_financial, name='club_financial'),
+    path('club-financial/edit/<int:pk>/', views.edit_club_financial_transaction, name='edit_club_financial_transaction'),
+    path('club-financial/delete/<int:pk>/', views.delete_club_financial_transaction, name='delete_club_financial_transaction'),
 ]

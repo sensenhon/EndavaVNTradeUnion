@@ -2,6 +2,8 @@ from django import forms
 from django.utils.crypto import get_random_string
 from django.contrib.auth.models import User
 from .models import Employee, Discipline, JobTitle, Floor, Gender, WorkingType, MembershipTypeByAdmin
+from .models import ClubFinancialTransaction, FinancialCategory
+from .models import FinancialDescription
 
 class EmployeeLoginForm(forms.Form):
     username = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}), label='Username')
@@ -94,3 +96,38 @@ class EmployeeRegisterForm(forms.ModelForm):
         if commit:
             employee.save()
         return employee
+
+class ClubFinancialForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Nếu không phải superuser thì ẩn trường club
+        request = kwargs.get('initial', {}).get('request')
+        if request and not (request.user.is_superuser if request.user.is_authenticated else False):
+            self.fields['club'].widget = forms.HiddenInput()
+        # Lọc category chỉ lấy for_type club hoặc both và đúng financial_type
+        financial_type = None
+        if 'data' in kwargs:
+            financial_type = kwargs['data'].get('financial_type')
+        elif len(args) > 0 and isinstance(args[0], dict):
+            financial_type = args[0].get('financial_type')
+        if financial_type:
+            self.fields['category'].queryset = FinancialCategory.objects.filter(for_type__in=['club', 'both'], type=financial_type)
+        else:
+            self.fields['category'].queryset = FinancialCategory.objects.filter(for_type__in=['club', 'both'])
+        # Lọc description theo category đã chọn
+        category_id = None
+        if 'data' in kwargs:
+            category_id = kwargs['data'].get('category')
+        elif len(args) > 0 and isinstance(args[0], dict):
+            category_id = args[0].get('category')
+        if category_id:
+            self.fields['description'].queryset = FinancialDescription.objects.filter(category_id=category_id)
+        else:
+            self.fields['description'].queryset = FinancialDescription.objects.none()
+    class Meta:
+        model = ClubFinancialTransaction
+        fields = ['club', 'financial_type', 'category', 'description', 'date', 'details', 'amount', 'payment_evidence']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'details': forms.Textarea(attrs={'rows': 2}),
+        }

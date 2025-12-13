@@ -1,3 +1,4 @@
+
 from django.views.decorators.http import require_GET
 import io
 import json
@@ -18,7 +19,7 @@ from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.forms import modelformset_factory, inlineformset_factory, modelformset_factory
 from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee, EmployeeGiftYear, FinancialCategory, TUFinancialTransaction, FinancialDescription
-from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm
+from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm, ClubFinancialForm
 from django.db.models import Q, Sum
 from django.views.decorators.http import require_POST
 from django.utils import timezone
@@ -54,6 +55,115 @@ DISPLAY_FIELDS = [
 
 def is_committee_or_superuser(user):
 	return user.is_superuser or user.groups.filter(name='TU committee').exists()
+
+def is_clubadmin(user):
+	return user.groups.filter(name='clubadmin').exists()
+
+def is_superuser_committee_clubadmin(user):
+	return user.is_superuser or user.groups.filter(name='TU committee').exists() or is_clubadmin(user)
+
+@login_required
+@user_passes_test(is_superuser_committee_clubadmin)
+def club_financial(request):
+	from .models import ClubFinancialTransaction, Club
+	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+	is_pot = request.user.groups.filter(name='pot').exists() if request.user.is_authenticated else False
+	user_groups = request.user.groups.values_list('name', flat=True)
+	clubadmin_group = None
+	club_obj = None
+	year = request.GET.get('year')
+	month = request.GET.get('month')
+	now = timezone.now()
+	year = int(year) if year else now.year
+	if month in [None, '', 'None']:
+		month = None
+	else:
+		try:
+			month = int(month)
+		except Exception:
+			month = None
+	for g in user_groups:
+		if g.lower().startswith('clubadmin'):
+			clubadmin_group = g
+			break
+	if clubadmin_group:
+		club_name = clubadmin_group.replace('ClubAdmin ', '').strip()
+		club_obj = Club.objects.filter(name=club_name).first()
+	club_list = list(Club.objects.all())
+	if is_superuser:
+		club_id = request.GET.get('club')
+		if club_id in [None, '', 'None']:
+			club_id = club_list[0].id if club_list else None
+		club_obj = Club.objects.filter(id=club_id).first() if club_id else None
+		show_club_dropdown = True
+	else:
+		show_club_dropdown = False
+	# Xử lý submit transaction
+	if request.method == 'POST':
+		post_data = request.POST.copy()
+		if not is_superuser and club_obj:
+			post_data['club'] = club_obj.id
+		form = ClubFinancialForm(post_data, request.FILES, initial={'request': request})
+		if form.is_valid():
+			tx = form.save(commit=False)
+			from .models import Employee
+			tx.created_by = Employee.objects.filter(user=request.user).first()
+			tx.save()
+			messages.success(request, 'Transaction submitted successfully!')
+			return redirect(request.path + f'?club={club_obj.id if club_obj else ''}&year={year}&month={month}')
+	else:
+		form = ClubFinancialForm(initial={'request': request})
+	transactions = ClubFinancialTransaction.objects.filter(date__year=year)
+	if month:
+		transactions = transactions.filter(date__month=month)
+	if club_obj:
+		transactions = transactions.filter(club=club_obj)
+	opening_obj = transactions.order_by('date').first()
+	opening_balance = opening_obj.opening_balance if opening_obj and hasattr(opening_obj, 'opening_balance') else 0
+	total_income = sum(t.amount for t in transactions if t.financial_type == 'income')
+	total_expense = sum(t.amount for t in transactions if t.financial_type == 'expense')
+	closing_balance = opening_balance + total_income - total_expense
+	club_summary = {
+		'year': year,
+		'month': month,
+		'club_name': club_obj.name if club_obj else '',
+		'opening_balance': opening_balance,
+		'total_income': total_income,
+		'total_expense': total_expense,
+		'closing_balance': closing_balance
+	}
+	# recent_transactions: luôn filter theo club_obj (superuser chọn club, clubadmin chỉ thấy club mình)
+	recent_transactions = ClubFinancialTransaction.objects.filter(club=club_obj).order_by('-date', '-created_at')[:10] if club_obj else []
+	category_list = [
+		{
+			'id': cat.id,
+			'name': cat.name,
+			'type': cat.type,
+		} for cat in FinancialCategory.objects.filter(for_type__in=['club', 'both'])
+	]
+	description_list = [
+		{
+			'id': desc.id,
+			'description': desc.description,
+			'category_id': desc.category_id,
+		} for desc in FinancialDescription.objects.all()
+	]
+	return render(request, 'employee/club_financial.html', {
+		'form': form,
+		'club_summary': club_summary,
+		'club_list': club_list,
+		'show_club_dropdown': show_club_dropdown,
+		'year': year,
+		'month': month,
+		'is_superuser': is_superuser,
+		'is_committee': is_committee,
+		'is_pot': is_pot,
+		'is_clubadmin': bool(clubadmin_group),
+		'recent_transactions': recent_transactions,
+		'category_list': category_list,
+		'description_list': description_list
+	})
 
 def get_children_info(employee_qs, june_first):
 	result = {}
@@ -1107,17 +1217,22 @@ def delete_financial_transaction(request, pk):
 
 @login_required
 def get_financial_options(request):
-	ftype = request.GET.get('type')
-	category_id = request.GET.get('category')
-	categories = FinancialCategory.objects.filter(type=ftype)
-	if category_id:
-		descriptions = FinancialDescription.objects.filter(category_id=category_id)
-	else:
-		descriptions = FinancialDescription.objects.filter(type=ftype)
-	return JsonResponse({
-		'categories': [{'id': c.id, 'name': str(c)} for c in categories],
-		'descriptions': [{'id': d.id, 'text': str(d)} for d in descriptions],
-	})
+		ftype = request.GET.get('type')
+		category_id = request.GET.get('category')
+		# Nếu là club-financial thì chỉ lấy for_type club hoặc both
+		is_club = 'club-financial' in request.META.get('HTTP_REFERER', '')
+		if is_club:
+			categories = FinancialCategory.objects.filter(type=ftype, for_type__in=['club', 'both'])
+		else:
+			categories = FinancialCategory.objects.filter(type=ftype)
+		if category_id:
+			descriptions = FinancialDescription.objects.filter(category_id=category_id)
+		else:
+			descriptions = FinancialDescription.objects.filter(type=ftype)
+		return JsonResponse({
+			'categories': [{'id': c.id, 'name': str(c), 'for_type': c.for_type} for c in categories],
+			'descriptions': [{'id': d.id, 'text': str(d)} for d in descriptions],
+		})
 
 def get_tu_financial_summary(year, month=None):
     from .models import TUFinancialTransaction, FinancialOpeningBalance
@@ -1163,3 +1278,29 @@ def export_financial_report(request):
     output.seek(0)
     response = FileResponse(output, as_attachment=True, filename=filename)
     return response
+
+@login_required
+def edit_club_financial_transaction(request, pk):
+	from .models import ClubFinancialTransaction, Employee
+	transaction = ClubFinancialTransaction.objects.get(pk=pk)
+	from .forms import ClubFinancialForm
+	form = ClubFinancialForm(request.POST or None, request.FILES or None, instance=transaction)
+	if request.method == 'POST' and form.is_valid():
+		transaction = form.save(commit=False)
+		transaction.created_by = Employee.objects.filter(user=request.user).first()
+		transaction.save()
+		messages.success(request, 'Club financial transaction updated!')
+		return redirect('club_financial')
+	return render(request, 'employee/club_financial.html', {
+		'form': form,
+		'edit_mode': True,
+		'edit_id': pk,
+	})
+
+@login_required
+def delete_club_financial_transaction(request, pk):
+	from .models import ClubFinancialTransaction
+	transaction = ClubFinancialTransaction.objects.get(pk=pk)
+	transaction.delete()
+	messages.success(request, 'Club financial transaction deleted!')
+	return redirect('club_financial')

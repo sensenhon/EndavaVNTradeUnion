@@ -152,9 +152,15 @@ class FinancialCategory(models.Model):
 		('income', 'Thu'),
 		('expense', 'Chi'),
 	)
+	FOR_CHOICES = (
+		('tu', 'TU'),
+		('club', 'Club'),
+		('both', 'Both'),
+	)
 	code = models.CharField(max_length=20, unique=True)
 	name = models.CharField(max_length=100)
 	type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+	for_type = models.CharField(max_length=10, choices=FOR_CHOICES, default='tu')
 	estimated_expense = models.DecimalField(max_digits=15, decimal_places=2, default=0, help_text='Estimated expense/income for this category')
 
 	def __str__(self):
@@ -211,24 +217,31 @@ class FloorFinancialTransaction(models.Model):
     def __str__(self):
         return f"Floor {self.floor} {self.get_financial_type_display()} - {self.category} - {self.amount} VND on {self.date}"
 
+class Club(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return self.name
+
 class ClubFinancialTransaction(models.Model):
-    FINANCIAL_TYPE_CHOICES = (
+	FINANCIAL_TYPE_CHOICES = (
         ('income', 'Thu'),
         ('expense', 'Chi'),
     )
-    club_name = models.CharField(max_length=100)
-    category = models.ForeignKey(FinancialCategory, on_delete=models.PROTECT)
-    date = models.DateField()
-    payment_id = models.CharField(max_length=255)
-    description = models.ForeignKey(FinancialDescription, on_delete=models.PROTECT)
-    details = models.CharField(max_length=255)
-    amount = models.DecimalField(max_digits=15, decimal_places=0)
-    financial_type = models.CharField(max_length=10, choices=FINANCIAL_TYPE_CHOICES)
-    payment_evidence = models.ImageField(upload_to='financial_evidence/', null=True, blank=True)
-    created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    def __str__(self):
-        return f"Club {self.club_name} {self.get_financial_type_display()} - {self.category} - {self.amount} VND on {self.date}"
+	club = models.ForeignKey('Club', on_delete=models.PROTECT)
+	category = models.ForeignKey(FinancialCategory, on_delete=models.PROTECT)
+	date = models.DateField()
+	payment_id = models.CharField(max_length=255)
+	description = models.ForeignKey(FinancialDescription, on_delete=models.PROTECT)
+	details = models.CharField(max_length=255)
+	amount = models.DecimalField(max_digits=15, decimal_places=0)
+	financial_type = models.CharField(max_length=10, choices=FINANCIAL_TYPE_CHOICES)
+	payment_evidence = models.ImageField(upload_to='financial_evidence/', null=True, blank=True)
+	created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, blank=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+	def __str__(self):
+		return f"Club {self.club.name} {self.get_financial_type_display()} - {self.category} - {self.amount} VND on {self.date}"
 
 class FinancialOpeningBalance(models.Model):
     TYPE_CHOICES = (
