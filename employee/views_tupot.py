@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpResponse
 import io, os
 from employee.models import Employee
+from openpyxl import Workbook
 from openpyxl import load_workbook
 from django.utils import timezone
 from .models_tupot import TUPOTExportHistory
@@ -24,7 +25,6 @@ def tu_pot(request):
     if request.method == 'POST' and request.FILES.get('excel_file'):
         excel_file = request.FILES['excel_file']
         try:
-            from django.utils import timezone
             upload_time = timezone.localtime()
             # Save original uploaded file
             upload_filename = f"tu_pot_upload_{upload_time.strftime('%Y%m%d_%H%M%S')}.xlsx"
@@ -59,7 +59,6 @@ def tu_pot(request):
                 request.session['pot_download_url'] = f"/media/tu_pot_exports/{export_filename}"
                 request.session['pot_export_time'] = export_time.strftime('%Y-%m-%d %H:%M:%S')
                 # 2. Newcomer file
-                from openpyxl import Workbook
                 out_wb = Workbook()
                 out_ws = out_wb.active
                 headers = [
@@ -82,7 +81,6 @@ def tu_pot(request):
                             try:
                                 month_str = date_joining.strftime('%b')
                             except Exception:
-                                from datetime import datetime
                                 try:
                                     date_obj = datetime.strptime(str(date_joining), '%Y-%m-%d')
                                     month_str = date_obj.strftime('%b')
@@ -153,7 +151,6 @@ def tu_pot(request):
     is_superuser = request.user.is_superuser if request.user.is_authenticated else False
     is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
     is_pot = request.user.groups.filter(name='pot').exists() if request.user.is_authenticated else False
-    from django.utils import timezone
     now = timezone.localtime()
     if export_filename:
         download_url = f"/media/tu_pot_exports/{export_filename}"

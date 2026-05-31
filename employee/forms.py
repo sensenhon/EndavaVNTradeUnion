@@ -1,10 +1,7 @@
 from django import forms
 from django.utils.crypto import get_random_string
 from django.contrib.auth.models import User
-from .models import Employee, Discipline, JobTitle, Floor, Gender, WorkingType, MembershipTypeByAdmin
-from .models import ClubFinancialTransaction, FinancialCategory
-from .models import FinancialDescription
-
+from .models import Employee, Discipline, JobTitle, Floor, Gender, WorkingType, MembershipTypeByAdmin, ClubFinancialTransaction, FinancialCategory, FinancialDescription
 class EmployeeLoginForm(forms.Form):
     username = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}), label='Username')
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}), required=True, label='Password')

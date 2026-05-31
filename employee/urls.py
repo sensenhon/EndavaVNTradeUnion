@@ -1,9 +1,6 @@
 from django.urls import path
 from .views import committee_dashboard, financial_view
 from . import views, views_tupot
-from django.urls import path
-from .views import committee_dashboard
-from . import views, views_tupot
 
 urlpatterns = [
     path('', views.home, name='home'),

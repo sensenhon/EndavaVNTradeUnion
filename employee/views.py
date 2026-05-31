@@ -1,33 +1,31 @@
 
-from django.views.decorators.http import require_GET
+
 import io
+import os
 import json
 import pandas as pd
+import openpyxl
 import datetime
 from lunardate import LunarDate
 from datetime import date
+from openpyxl import load_workbook
 from django import forms
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.http import HttpResponse
 from django.contrib.auth import logout, update_session_auth_hash, authenticate, login as auth_login
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.forms import modelformset_factory, inlineformset_factory, modelformset_factory
-from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee, EmployeeGiftYear, FinancialCategory, TUFinancialTransaction, FinancialDescription
-from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm, ClubFinancialForm
 from django.db.models import Q, Sum
-from django.views.decorators.http import require_POST
-from django.utils import timezone
+from django.views.decorators.http import require_POST, require_GET
 from django.conf import settings
-import openpyxl
-from openpyxl import load_workbook
-from django.http import FileResponse
-import os
+from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee, EmployeeGiftYear, FinancialCategory, TUFinancialTransaction, FinancialDescription, ClubFinancialTransaction, Club, FinancialOpeningBalance
+from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm, ClubFinancialForm
 
 # Dùng chung cho dashboard và export
 DISPLAY_FIELDS = [
@@ -65,7 +63,6 @@ def is_superuser_committee_clubadmin(user):
 @login_required
 @user_passes_test(is_superuser_committee_clubadmin)
 def club_financial(request):
-	from .models import ClubFinancialTransaction, Club
 	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
 	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
 	is_pot = request.user.groups.filter(name='pot').exists() if request.user.is_authenticated else False
@@ -107,7 +104,6 @@ def club_financial(request):
 		form = ClubFinancialForm(post_data, request.FILES, initial={'request': request})
 		if form.is_valid():
 			tx = form.save(commit=False)
-			from .models import Employee
 			tx.created_by = Employee.objects.filter(user=request.user).first()
 			tx.save()
 			messages.success(request, 'Transaction submitted successfully!')
@@ -1235,7 +1231,6 @@ def get_financial_options(request):
 		})
 
 def get_tu_financial_summary(year, month=None):
-    from .models import TUFinancialTransaction, FinancialOpeningBalance
     opening_obj = FinancialOpeningBalance.objects.filter(type='tu', year=year, month__isnull=True).first()
     opening_balance = opening_obj.opening_balance if opening_obj else 0
     transactions = TUFinancialTransaction.objects.filter(date__year=year)
@@ -1281,9 +1276,7 @@ def export_financial_report(request):
 
 @login_required
 def edit_club_financial_transaction(request, pk):
-	from .models import ClubFinancialTransaction, Employee
 	transaction = ClubFinancialTransaction.objects.get(pk=pk)
-	from .forms import ClubFinancialForm
 	form = ClubFinancialForm(request.POST or None, request.FILES or None, instance=transaction)
 	if request.method == 'POST' and form.is_valid():
 		transaction = form.save(commit=False)
@@ -1299,7 +1292,6 @@ def edit_club_financial_transaction(request, pk):
 
 @login_required
 def delete_club_financial_transaction(request, pk):
-	from .models import ClubFinancialTransaction
 	transaction = ClubFinancialTransaction.objects.get(pk=pk)
 	transaction.delete()
 	messages.success(request, 'Club financial transaction deleted!')

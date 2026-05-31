@@ -5,6 +5,7 @@ from django.contrib import admin
 from django import forms
 from django.shortcuts import render
 from django.contrib.auth.models import User
+from django.urls import path
 from .models import Employee, Children, Discipline, Floor, Gender, JobTitle, WorkingType, MembershipTypeByAdmin
 
 class EmployeeImportForm(forms.Form):
@@ -26,7 +27,6 @@ class EmployeeImportAdmin(admin.ModelAdmin):
     fields = [field.name for field in Employee._meta.fields if field.name != 'id']
 
     def get_urls(self):
-        from django.urls import path
         urls = super().get_urls()
         custom_urls = [
             path('import-excel/', self.admin_site.admin_view(self.import_excel), name='employee-import-excel'),
