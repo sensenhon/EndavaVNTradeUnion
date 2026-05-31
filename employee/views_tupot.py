@@ -38,14 +38,14 @@ def tu_pot(request):
             ws = wb.active
             max_col = ws.max_column
             max_row = ws.max_row
-            if max_col < 10:
-                error = 'File must have at least 10 columns.'
+            if max_col < 9:
+                error = 'File must have at least 9 columns.'
             else:
                 # 1. Membership file
                 yes_emails = set(Employee.objects.filter(membership_type_by_admin__name__iexact='Yes').values_list('email', flat=True))
                 for row in ws.iter_rows(min_row=2, max_row=max_row):
-                    email_cell = row[8]
-                    result_cell = row[9]
+                    email_cell = row[7]  # cột 8 (index 7)
+                    result_cell = row[8] # cột 9 (index 8)
                     email = str(email_cell.value).strip() if email_cell.value else ''
                     if email in yes_emails:
                         result_cell.value = 'Yes'
@@ -70,10 +70,11 @@ def tu_pot(request):
                 out_ws.append(headers)
                 current_emails = set(Employee.objects.values_list('email', flat=True))
                 for row in ws.iter_rows(min_row=2, max_row=max_row):
+                    # Cập nhật lại index cột cho đúng với file 9 cột
                     person_number = str(row[1].value).strip() if row[1].value else ''
                     full_name_vn = str(row[2].value).strip() if row[2].value else ''
-                    date_joining = row[4].value
-                    email = str(row[8].value).strip() if row[8].value else ''
+                    date_joining = row[4].value if len(row) > 4 else None
+                    email = str(row[7].value).strip() if len(row) > 7 and row[7].value else ''
                     if email and email not in current_emails:
                         username = email.split('@')[0] if '@' in email else ''
                         password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
@@ -110,18 +111,20 @@ def tu_pot(request):
                 uploaded_emails = set()
                 extra_info_map = {}
                 for row in ws.iter_rows(min_row=2, max_row=max_row):
-                    email = str(row[8].value).strip() if row[8].value else ''
-                    extra_info = str(row[6].value).strip() if row[6].value else ''
+                    email = str(row[7].value).strip() if len(row) > 7 and row[7].value else ''
+                    date_of_leaving = str(row[5].value).strip() if len(row) > 5 and row[5].value else ''  # cột số 6
                     if email:
                         uploaded_emails.add(email)
-                        if extra_info:
-                            extra_info_map[email] = extra_info
-                all_employees = Employee.objects.values_list('email', flat=True)
+                        if date_of_leaving:
+                            extra_info_map[email] = date_of_leaving
+                # Lấy danh sách email của member, loại trừ các bạn có membership_type_by_admin__name = 'resignation'
+                all_employees = Employee.objects.exclude(membership_type_by_admin__name__iexact='resignation').values_list('email', flat=True)
                 missing_wb = Workbook()
                 missing_ws = missing_wb.active
                 missing_ws.append(['Email', 'Extra Info'])
                 for emp_email in all_employees:
                     if emp_email not in uploaded_emails:
+                        # Lấy date_of_leaving từ extra_info_map nếu có, không thì để trống
                         info = extra_info_map.get(emp_email, '')
                         missing_ws.append([emp_email, info])
                 missing_filename = f"tu_pot_resigned_{tu_export_time.strftime('%Y%m%d_%H%M%S')}.xlsx"
@@ -134,8 +137,8 @@ def tu_pot(request):
                 resign_ws = resign_wb.active
                 resign_ws.append(['Email', 'Extra Info'])
                 for row in ws.iter_rows(min_row=2, max_row=max_row):
-                    email = str(row[8].value).strip() if row[8].value else ''
-                    extra_info = str(row[6].value).strip() if row[6].value else ''
+                    email = str(row[7].value).strip() if len(row) > 7 and row[7].value else ''
+                    extra_info = str(row[5].value).strip() if len(row) > 5 and row[5].value else ''
                     if email and extra_info:
                         resign_ws.append([email, extra_info])
                 resign_filename = f"tu_pot_resigning_{tu_export_time.strftime('%Y%m%d_%H%M%S')}.xlsx"
