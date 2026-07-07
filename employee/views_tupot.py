@@ -72,7 +72,7 @@ def tu_pot(request):
                     # Cập nhật lại index cột cho đúng với file 9 cột
                     person_number = str(row[1].value).strip() if row[1].value else ''
                     full_name_vn = str(row[2].value).strip() if row[2].value else ''
-                    date_joining = row[4].value if len(row) > 4 else None
+                    date_joining = row[3].value if len(row) > 3 else None
                     email = str(row[7].value).strip() if len(row) > 7 and row[7].value else ''
                     if email and email not in current_emails:
                         username = email.split('@')[0] if '@' in email else ''
