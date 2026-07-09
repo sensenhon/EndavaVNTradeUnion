@@ -17,7 +17,9 @@
         {% endif %}
         {% for field in form %}
             {% if show_limited and field.name in hidden_fields %}
-                {# Ẩn field nhạy cảm #}
+                {# Hide sensitive field #}
+            {% elif show_limited and field.name == 'dob' %}
+                {# Hide sensitive field #}
             {% elif field.name == 'membership_type_by_admin' %}
                 {% if is_superuser or is_committee %}
                 <div class="mb-3">

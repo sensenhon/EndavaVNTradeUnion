@@ -716,6 +716,7 @@ def edit_profile(request):
 		class Meta(EmployeeRegisterForm.Meta):
 			exclude = ['username', 'password']
 		def __init__(self, *args, **kwargs):
+			self.show_limited = kwargs.pop('show_limited', False)
 			super().__init__(*args, **kwargs)
 			for field in ['username', 'password']:
 				if field in self.fields:
@@ -730,12 +731,43 @@ def edit_profile(request):
 				for field in sensitive_fields:
 					if field in self.fields:
 						self.fields[field].required = False
+				# TU committee editing another profile: replace dob with month/day inputs
+				if 'dob' in self.fields:
+					self.fields.pop('dob')
+					self.fields['dob_month'] = forms.IntegerField(
+						required=True,
+						min_value=1,
+						max_value=12,
+						label='Birth Month',
+						widget=forms.NumberInput(attrs={'class': 'form-control'})
+					)
+					self.fields['dob_day'] = forms.IntegerField(
+						required=True,
+						min_value=1,
+						max_value=31,
+						label='Birth Day',
+						widget=forms.NumberInput(attrs={'class': 'form-control'})
+					)
+					if self.instance and getattr(self.instance, 'dob', None):
+						self.fields['dob_month'].initial = self.instance.dob.month
+						self.fields['dob_day'].initial = self.instance.dob.day
 			# Only show membership_type_by_admin for superuser or TU committee
 			if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
 				if 'membership_type_by_admin' in self.fields:
 					self.fields.pop('membership_type_by_admin')
+		def clean(self):
+			cleaned_data = super().clean()
+			if self.show_limited and 'dob_month' in self.fields and 'dob_day' in self.fields:
+				month = cleaned_data.get('dob_month')
+				day = cleaned_data.get('dob_day')
+				if month is not None and day is not None:
+					try:
+						date(2000, month, day)
+					except ValueError:
+						raise forms.ValidationError('Invalid Birth Month and Day combination.')
+			return cleaned_data
 	if request.method == 'POST':
-		form = EmployeeUpdateForm(request.POST, instance=employee)
+		form = EmployeeUpdateForm(request.POST, instance=employee, show_limited=show_limited)
 		print('Form errors:', form.errors)
 		if form.is_valid():
 			# Lưu dữ liệu cũ
@@ -744,6 +776,12 @@ def edit_profile(request):
 			if show_limited:
 				for field in sensitive_fields:
 					setattr(form.instance, field, getattr(old_employee, field))
+				if 'dob_month' in form.cleaned_data and 'dob_day' in form.cleaned_data:
+					month = form.cleaned_data.get('dob_month')
+					day = form.cleaned_data.get('dob_day')
+					if month and day:
+						old_year = old_employee.dob.year if old_employee.dob else date.today().year
+						form.instance.dob = date(old_year, month, day)
 			updated_employee = form.save()
 			changes = []
 			field_labels = {
@@ -808,7 +846,7 @@ def edit_profile(request):
 			else:
 				return redirect('/profile/')
 	else:
-		form = EmployeeUpdateForm(instance=employee)
+		form = EmployeeUpdateForm(instance=employee, show_limited=show_limited)
 	is_superuser = request.user.is_superuser if request.user.is_authenticated else False
 	is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
 	return render(request, 'employee/edit_profile.html', {

@@ -1,5 +1,17 @@
+import calendar
+import re
 from django import template
 register = template.Library()
+
+DATE_STR_RE = re.compile(r"'(\d{4})-(\d{2})-(\d{2})'")
+
+def redact_dob_year(line):
+    def repl(match):
+        month = int(match.group(2))
+        day = int(match.group(3))
+        month_name = calendar.month_name[month]
+        return f"{month_name} {day}"
+    return DATE_STR_RE.sub(repl, line)
 
 @register.filter
 def filter_sensitive_history(history_text, hidden_fields):
@@ -11,11 +23,13 @@ def filter_sensitive_history(history_text, hidden_fields):
         return []
     lines = history_text.split('\n')
     filtered = []
-    # Lowercase all hidden fields for robust matching
     hidden_fields_lower = [str(f).lower() for f in hidden_fields]
     for line in lines:
-        hide = False
         line_lower = line.lower()
+        if 'date of birth' in line_lower:
+            line = redact_dob_year(line)
+            line_lower = line.lower()
+        hide = False
         for field in hidden_fields_lower:
             if field in line_lower:
                 hide = True
