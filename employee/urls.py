@@ -30,4 +30,6 @@ urlpatterns = [
     path('club-financial/', views.club_financial, name='club_financial'),
     path('club-financial/edit/<int:pk>/', views.edit_club_financial_transaction, name='edit_club_financial_transaction'),
     path('club-financial/delete/<int:pk>/', views.delete_club_financial_transaction, name='delete_club_financial_transaction'),
+    path('import-employees/', views.import_employees, name='import_employees'),
+    path('import-employees/template/', views.download_employee_template, name='download_employee_template'),
 ]

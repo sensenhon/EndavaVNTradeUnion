@@ -9,6 +9,7 @@ import datetime
 from lunardate import LunarDate
 from datetime import date
 from openpyxl import load_workbook
+from django.contrib import messages
 from django import forms
 from django.urls import reverse
 from django.utils import timezone
@@ -24,7 +25,7 @@ from django.forms import modelformset_factory, inlineformset_factory, modelforms
 from django.db.models import Q, Sum
 from django.views.decorators.http import require_POST, require_GET
 from django.conf import settings
-from .models import Employee, EditHistory, Discipline, Floor, EditHistory, Employee, Children, TUCommittee, EmployeeGiftYear, FinancialCategory, TUFinancialTransaction, FinancialDescription, ClubFinancialTransaction, Club, FinancialOpeningBalance
+from .models import Employee, EditHistory, Discipline, Floor, Gender, JobTitle, WorkingType, MembershipTypeByAdmin, Children, TUCommittee, EmployeeGiftYear, FinancialCategory, TUFinancialTransaction, FinancialDescription, ClubFinancialTransaction, Club, FinancialOpeningBalance
 from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm, ClubFinancialForm
 
 # Dùng chung cho dashboard và export
@@ -857,6 +858,121 @@ def edit_profile(request):
 		'hidden_fields': hidden_fields,
 		'employee': employee
 	})
+
+@login_required
+def import_employees(request):
+    is_superuser = request.user.is_superuser if request.user.is_authenticated else False
+    is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
+    if not (is_superuser or is_committee):
+        messages.error(request, 'Bạn không có quyền import employee.')
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = forms.Form(request.POST, request.FILES)
+        excel_file = request.FILES.get('excel_file')
+        mode = request.POST.get('mode', 'create_or_update')
+        if excel_file:
+            try:
+                df = pd.read_excel(excel_file)
+                created = 0
+                updated = 0
+                errors = []
+                for idx, row in df.iterrows():
+                    try:
+                        username = str(row.get('username', '')).strip()
+                        email = str(row.get('email', '')).strip()
+                        if not username or not email:
+                            raise ValueError('username/email is required')
+
+                        user, user_created = User.objects.get_or_create(username=username, defaults={'email': email})
+                        if user_created:
+                            password = str(row.get('password', '')).strip() or 'TempPass@123'
+                            user.set_password(password)
+                            user.email = email
+                            user.save()
+
+                        person_number = str(row.get('person_number', '')).strip()
+                        if not person_number:
+                            raise ValueError('person_number is required')
+
+                        defaults = {
+                            'full_name_en': str(row.get('full_name_en', '')).strip() or username,
+                            'full_name_vn': str(row.get('full_name_vn', '')).strip() or username,
+                            'email': email,
+                            'dob': row.get('dob') if not pd.isna(row.get('dob')) else '1900-01-01',
+                            'gender': Gender.objects.filter(name__iexact=str(row.get('gender', '')).strip()).first() if str(row.get('gender', '')).strip() else None,
+                            'discipline': Discipline.objects.filter(name__iexact=str(row.get('discipline', '')).strip()).first() if str(row.get('discipline', '')).strip() else None,
+                            'job_title': JobTitle.objects.filter(name__iexact=str(row.get('job_title', '')).strip()).first() if str(row.get('job_title', '')).strip() else None,
+                            'floor': Floor.objects.filter(name__iexact=str(row.get('floor', '')).strip()).first() if str(row.get('floor', '')).strip() else None,
+                            'working_type': WorkingType.objects.filter(name__iexact=str(row.get('working_type', '')).strip()).first() if str(row.get('working_type', '')).strip() else None,
+                            'identity_number': str(row.get('identity_number', '')).strip(),
+                            'native_place': str(row.get('native_place', '')).strip(),
+                            'ethnicity': str(row.get('ethnicity', '')).strip(),
+                            'religion': str(row.get('religion', '')).strip(),
+                            'education_level': str(row.get('education_level', '')).strip(),
+                            'specialization': str(row.get('specialization', '')).strip(),
+                            'address': str(row.get('address', '')).strip(),
+                            'trade_union_member': bool(str(row.get('trade_union_member', 'False')).strip().lower() in {'1', 'true', 'yes', 'y'}),
+                            'membership_type_by_admin': MembershipTypeByAdmin.objects.filter(name__iexact=str(row.get('membership_type_by_admin', '')).strip()).first() if str(row.get('membership_type_by_admin', '')).strip() else None,
+                            'membership_since': row.get('membership_since') if not pd.isna(row.get('membership_since')) else date.today(),
+                        }
+
+                        existing_employee = Employee.objects.filter(
+                            Q(person_number=person_number) |
+                            Q(email=email) |
+                            Q(user__username=username)
+                        ).first()
+                        if existing_employee and mode == 'create_or_update':
+                            for field, value in defaults.items():
+                                setattr(existing_employee, field, value)
+                            existing_employee.user = user
+                            existing_employee.save()
+                            updated += 1
+                        else:
+                            employee = Employee.objects.create(
+                                user=user,
+                                person_number=person_number,
+                                **defaults,
+                            )
+                            created += 1
+
+                    except Exception as exc:
+                        errors.append(f'Row {idx + 2}: {exc}')
+
+                if errors:
+                    messages.warning(request, f'Imported {created} new employees, updated {updated} existing employees. Errors: {len(errors)}')
+                    for error in errors[:10]:
+                        messages.error(request, error)
+                else:
+                    messages.success(request, f'Imported {created} new employees, updated {updated} existing employees.')
+                return redirect('import_employees')
+            except Exception as exc:
+                messages.error(request, f'Import failed: {exc}')
+                return redirect('import_employees')
+
+    return render(request, 'employee/import_employees.html', {
+        'is_superuser': is_superuser,
+        'is_committee': is_committee,
+    })
+
+@login_required
+def download_employee_template(request):
+    headers = [
+        'username', 'password', 'email', 'person_number', 'full_name_en', 'full_name_vn', 'dob',
+        'gender', 'discipline', 'job_title', 'floor', 'working_type', 'identity_number',
+        'native_place', 'ethnicity', 'religion', 'education_level', 'specialization', 'address',
+        'trade_union_member', 'membership_type_by_admin', 'membership_since'
+    ]
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'EmployeeTemplate'
+    ws.append(headers)
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    response = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=employee_import_template.xlsx'
+    return response
 
 @login_required
 def profile(request):
