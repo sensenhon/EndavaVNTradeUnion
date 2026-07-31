@@ -984,8 +984,11 @@ def register(request):
 		form = EmployeeRegisterFormNoMembership()
 	return render(request, 'employee/register.html', {'form': form})
 
+@login_required
 @require_POST
 def update_birthday_gift(request):
+    if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     try:
         data = json.loads(request.body)
         emp_id = data.get('id')
@@ -1011,8 +1014,11 @@ def update_birthday_gift(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+@login_required
 @require_POST
 def update_tet_gift(request):
+    if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     try:
         data = json.loads(request.body)
         emp_id = data.get('id')
@@ -1038,8 +1044,11 @@ def update_tet_gift(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 	
+@login_required
 @require_POST
 def update_mooncake_gift(request):
+    if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     try:
         data = json.loads(request.body)
         emp_id = data.get('id')
@@ -1066,8 +1075,11 @@ def update_mooncake_gift(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+@login_required
 @require_POST
 def update_luckymoney_gift(request):
+    if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     try:
         data = json.loads(request.body)
         emp_id = data.get('id')
@@ -1094,47 +1106,53 @@ def update_luckymoney_gift(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+@login_required
 @require_POST
 def update_june_gift(request):
-	data = json.loads(request.body)
-	child_id = data.get('child_id')
-	received = data.get('june_gift_received')
-	try:
-		child = Children.objects.get(id=child_id)
-		child.june_gift_received = received
-		child.save()
-		# sync with EmployeeGiftYear
-		year = date.today().year
-		EmployeeGiftYear.objects.update_or_create(
+    if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    data = json.loads(request.body)
+    child_id = data.get('child_id')
+    received = data.get('june_gift_received')
+    try:
+        child = Children.objects.get(id=child_id)
+        child.june_gift_received = received
+        child.save()
+        # sync with EmployeeGiftYear
+        year = date.today().year
+        EmployeeGiftYear.objects.update_or_create(
             employee=child.employee,
             year=year,
             gift_type='june',
             defaults={'received': received}
         )
-		return JsonResponse({'success': True})
-	except Children.DoesNotExist:
-		return JsonResponse({'success': False, 'error': 'Child not found'})
+        return JsonResponse({'success': True})
+    except Children.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Child not found'})
 	
+@login_required
 @require_POST
 def update_autumn_gift(request):
-	data = json.loads(request.body)
-	child_id = data.get('child_id')
-	received = data.get('autumn_gift_received')
-	try:
-		child = Children.objects.get(id=child_id)
-		child.autumn_gift_received = received
-		child.save()
-		# sync with EmployeeGiftYear
-		year = date.today().year
-		EmployeeGiftYear.objects.update_or_create(
+    if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    data = json.loads(request.body)
+    child_id = data.get('child_id')
+    received = data.get('autumn_gift_received')
+    try:
+        child = Children.objects.get(id=child_id)
+        child.autumn_gift_received = received
+        child.save()
+        # sync with EmployeeGiftYear
+        year = date.today().year
+        EmployeeGiftYear.objects.update_or_create(
             employee=child.employee,
             year=year,
             gift_type='autumn',
             defaults={'received': received}
         )
-		return JsonResponse({'success': True})
-	except Children.DoesNotExist:
-		return JsonResponse({'success': False, 'error': 'Child not found'})
+        return JsonResponse({'success': True})
+    except Children.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Child not found'})
 	
 class TUFinancialTransactionForm(forms.ModelForm):
 	class Meta:
@@ -1314,6 +1332,8 @@ def export_financial_report(request):
 
 @login_required
 def edit_club_financial_transaction(request, pk):
+	if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
+		return redirect('home')
 	transaction = ClubFinancialTransaction.objects.get(pk=pk)
 	form = ClubFinancialForm(request.POST or None, request.FILES or None, instance=transaction)
 	if request.method == 'POST' and form.is_valid():
@@ -1330,6 +1350,8 @@ def edit_club_financial_transaction(request, pk):
 
 @login_required
 def delete_club_financial_transaction(request, pk):
+	if not (request.user.is_superuser or request.user.groups.filter(name='TU committee').exists()):
+		return redirect('home')
 	transaction = ClubFinancialTransaction.objects.get(pk=pk)
 	transaction.delete()
 	messages.success(request, 'Club financial transaction deleted!')
