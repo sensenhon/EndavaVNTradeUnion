@@ -986,6 +986,36 @@ def import_employees(request):
     preview_rows = None
     summary = None
 
+    if request.method == 'GET' and request.GET.get('newcomer_url'):
+        newcomer_url = request.GET.get('newcomer_url')
+        newcomer_filename = os.path.basename(newcomer_url)
+        if newcomer_filename.startswith('tu_pot_newcomer_') and newcomer_filename.endswith('.xlsx'):
+            newcomer_path = os.path.join(settings.BASE_DIR, 'media', 'tu_pot_exports', newcomer_filename)
+            if os.path.exists(newcomer_path):
+                try:
+                    df = pd.read_excel(
+                        newcomer_path,
+                        engine='openpyxl',
+                        dtype=str,
+                        keep_default_na=False,
+                    )
+                    df = df.fillna('')
+                    preview_rows = []
+                    for idx, row in df.iterrows():
+                        parsed = _parse_row(row)
+                        parsed['row_number'] = idx + 2
+                        preview_rows.append(parsed)
+                    valid_count = sum(1 for row in preview_rows if not row['errors'])
+                    summary = {
+                        'total_rows': len(preview_rows),
+                        'valid_rows': valid_count,
+                        'invalid_rows': len(preview_rows) - valid_count,
+                    }
+                except Exception as exc:
+                    messages.error(request, f'Preview failed: {exc}')
+        else:
+            messages.error(request, 'Invalid newcomer file selected.')
+
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'preview':

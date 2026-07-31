@@ -31,6 +31,7 @@
                 <div style="font-weight: bold; color: #1976d2; margin-bottom: 8px;">Newcomer File</div>
                 <div><b>Employees are in POT list but not exists in TU list</b>{{ tu_export_time|date:'d/m/Y H:i:s' }}</div>
                 <a href="{{ tu_download_url }}" class="btn btn-info mt-2">Download Newcomer</a>
+                <a href="{% url 'import_employees' %}?newcomer_url={{ tu_download_url|urlencode }}" class="btn btn-outline-primary mt-2 ms-2">Add to dashboard</a>
             </div>
         {% endif %}
         {% if tu_missing_download_url %}
