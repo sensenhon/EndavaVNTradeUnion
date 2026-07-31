@@ -859,7 +859,123 @@ def edit_profile(request):
 		'employee': employee
 	})
 
+def _to_string(value):
+    if isinstance(value, (datetime.date, datetime.datetime)):
+        return value.isoformat()
+    if pd.isna(value):
+        return ''
+    return str(value).strip()
+
+
+IMPORT_FIELDS = [
+    'username', 'password', 'email', 'person_number', 'full_name_en', 'full_name_vn', 'dob',
+    'gender', 'discipline', 'job_title', 'floor', 'working_type', 'identity_number',
+    'native_place', 'ethnicity', 'religion', 'education_level', 'specialization', 'address',
+    'trade_union_member', 'membership_type_by_admin', 'membership_since'
+]
+
+
+def _parse_row(row):
+    row_data = {field: _to_string(row.get(field, '')) for field in IMPORT_FIELDS}
+    return _validate_row_data(row_data)
+
+
+def _validate_row_data(row_data):
+    errors = []
+    field_errors = {}
+
+    if not row_data['username']:
+        errors.append('username is required')
+        field_errors['username'] = 'username is required'
+    if not row_data['email']:
+        errors.append('email is required')
+        field_errors['email'] = 'email is required'
+    if not row_data['person_number']:
+        errors.append('person_number is required')
+        field_errors['person_number'] = 'person_number is required'
+
+    if row_data['gender'] and not Gender.objects.filter(name__iexact=row_data['gender']).exists():
+        message = f"Gender '{row_data['gender']}' not found"
+        errors.append(message)
+        field_errors['gender'] = message
+    if row_data['discipline'] and not Discipline.objects.filter(name__iexact=row_data['discipline']).exists():
+        message = f"Discipline '{row_data['discipline']}' not found"
+        errors.append(message)
+        field_errors['discipline'] = message
+    if row_data['job_title'] and not JobTitle.objects.filter(name__iexact=row_data['job_title']).exists():
+        message = f"Job Title '{row_data['job_title']}' not found"
+        errors.append(message)
+        field_errors['job_title'] = message
+    if row_data['floor'] and not Floor.objects.filter(name__iexact=row_data['floor']).exists():
+        message = f"Floor '{row_data['floor']}' not found"
+        errors.append(message)
+        field_errors['floor'] = message
+    if row_data['working_type'] and not WorkingType.objects.filter(name__iexact=row_data['working_type']).exists():
+        message = f"Working Type '{row_data['working_type']}' not found"
+        errors.append(message)
+        field_errors['working_type'] = message
+    if row_data['membership_type_by_admin'] and not MembershipTypeByAdmin.objects.filter(name__iexact=row_data['membership_type_by_admin']).exists():
+        message = f"Membership Type '{row_data['membership_type_by_admin']}' not found"
+        errors.append(message)
+        field_errors['membership_type_by_admin'] = message
+
+    existing_employee = Employee.objects.filter(
+        Q(person_number=row_data['person_number']) |
+        Q(email=row_data['email']) |
+        Q(user__username=row_data['username'])
+    ).first()
+    action = 'update' if existing_employee else 'create'
+    return {
+        'row_data': row_data,
+        'errors': errors,
+        'field_errors': field_errors,
+        'action': action,
+        'existing_employee_id': existing_employee.id if existing_employee else None,
+    }
+
+
+def _get_choice_options():
+    return {
+        'gender': [('', 'No Data')] + [(obj.name, obj.name) for obj in Gender.objects.order_by('name')],
+        'discipline': [('', 'No Data')] + [(obj.name, obj.name) for obj in Discipline.objects.order_by('name')],
+        'job_title': [('', 'No Data')] + [(obj.name, obj.name) for obj in JobTitle.objects.order_by('name')],
+        'floor': [('', 'No Data')] + [(obj.name, obj.name) for obj in Floor.objects.order_by('name')],
+        'working_type': [('', 'No Data')] + [(obj.name, obj.name) for obj in WorkingType.objects.order_by('name')],
+        'membership_type_by_admin': [('', 'No Data')] + [(obj.name, obj.name) for obj in MembershipTypeByAdmin.objects.order_by('name')],
+        'trade_union_member': [('', 'No Data'), ('true', 'Yes'), ('false', 'No')],
+    }
+
+
+def _rows_from_post(request):
+    rows = []
+    try:
+        total_rows = int(request.POST.get('row_count', 0))
+    except ValueError:
+        total_rows = 0
+    for idx in range(total_rows):
+        if request.POST.get(f'row-{idx}-removed') == '1':
+            continue
+        row_data = {field: request.POST.get(f'row-{idx}-{field}', '').strip() for field in IMPORT_FIELDS}
+        row = _validate_row_data(row_data)
+        row['row_number'] = idx + 2
+        rows.append(row)
+    return rows
+
+
+def _parse_date(value):
+    if not value:
+        return None
+    try:
+        return datetime.date.fromisoformat(value)
+    except Exception:
+        try:
+            return pd.to_datetime(value).date()
+        except Exception:
+            return None
+
+
 @login_required
+@user_passes_test(is_committee_or_superuser)
 def import_employees(request):
     is_superuser = request.user.is_superuser if request.user.is_authenticated else False
     is_committee = request.user.groups.filter(name='TU committee').exists() if request.user.is_authenticated else False
@@ -867,92 +983,114 @@ def import_employees(request):
         messages.error(request, 'Bạn không có quyền import employee.')
         return redirect('home')
 
+    preview_rows = None
+    summary = None
+
     if request.method == 'POST':
-        form = forms.Form(request.POST, request.FILES)
-        excel_file = request.FILES.get('excel_file')
-        mode = request.POST.get('mode', 'create_or_update')
-        if excel_file:
-            try:
-                df = pd.read_excel(excel_file)
-                created = 0
-                updated = 0
-                errors = []
-                for idx, row in df.iterrows():
-                    try:
-                        username = str(row.get('username', '')).strip()
-                        email = str(row.get('email', '')).strip()
-                        if not username or not email:
-                            raise ValueError('username/email is required')
-
-                        user, user_created = User.objects.get_or_create(username=username, defaults={'email': email})
-                        if user_created:
-                            password = str(row.get('password', '')).strip() or 'TempPass@123'
-                            user.set_password(password)
-                            user.email = email
-                            user.save()
-
-                        person_number = str(row.get('person_number', '')).strip()
-                        if not person_number:
-                            raise ValueError('person_number is required')
-
-                        defaults = {
-                            'full_name_en': str(row.get('full_name_en', '')).strip() or username,
-                            'full_name_vn': str(row.get('full_name_vn', '')).strip() or username,
-                            'email': email,
-                            'dob': row.get('dob') if not pd.isna(row.get('dob')) else '1900-01-01',
-                            'gender': Gender.objects.filter(name__iexact=str(row.get('gender', '')).strip()).first() if str(row.get('gender', '')).strip() else None,
-                            'discipline': Discipline.objects.filter(name__iexact=str(row.get('discipline', '')).strip()).first() if str(row.get('discipline', '')).strip() else None,
-                            'job_title': JobTitle.objects.filter(name__iexact=str(row.get('job_title', '')).strip()).first() if str(row.get('job_title', '')).strip() else None,
-                            'floor': Floor.objects.filter(name__iexact=str(row.get('floor', '')).strip()).first() if str(row.get('floor', '')).strip() else None,
-                            'working_type': WorkingType.objects.filter(name__iexact=str(row.get('working_type', '')).strip()).first() if str(row.get('working_type', '')).strip() else None,
-                            'identity_number': str(row.get('identity_number', '')).strip(),
-                            'native_place': str(row.get('native_place', '')).strip(),
-                            'ethnicity': str(row.get('ethnicity', '')).strip(),
-                            'religion': str(row.get('religion', '')).strip(),
-                            'education_level': str(row.get('education_level', '')).strip(),
-                            'specialization': str(row.get('specialization', '')).strip(),
-                            'address': str(row.get('address', '')).strip(),
-                            'trade_union_member': bool(str(row.get('trade_union_member', 'False')).strip().lower() in {'1', 'true', 'yes', 'y'}),
-                            'membership_type_by_admin': MembershipTypeByAdmin.objects.filter(name__iexact=str(row.get('membership_type_by_admin', '')).strip()).first() if str(row.get('membership_type_by_admin', '')).strip() else None,
-                            'membership_since': row.get('membership_since') if not pd.isna(row.get('membership_since')) else date.today(),
-                        }
-
-                        existing_employee = Employee.objects.filter(
-                            Q(person_number=person_number) |
-                            Q(email=email) |
-                            Q(user__username=username)
-                        ).first()
-                        if existing_employee and mode == 'create_or_update':
-                            for field, value in defaults.items():
-                                setattr(existing_employee, field, value)
-                            existing_employee.user = user
-                            existing_employee.save()
-                            updated += 1
-                        else:
-                            employee = Employee.objects.create(
-                                user=user,
-                                person_number=person_number,
-                                **defaults,
-                            )
-                            created += 1
-
-                    except Exception as exc:
-                        errors.append(f'Row {idx + 2}: {exc}')
-
-                if errors:
-                    messages.warning(request, f'Imported {created} new employees, updated {updated} existing employees. Errors: {len(errors)}')
-                    for error in errors[:10]:
-                        messages.error(request, error)
+        action = request.POST.get('action')
+        if action == 'preview':
+            excel_file = request.FILES.get('excel_file')
+            if excel_file:
+                try:
+                    df = pd.read_excel(
+                        excel_file,
+                        engine='openpyxl',
+                        dtype=str,
+                        keep_default_na=False,
+                    )
+                    df = df.fillna('')
+                    preview_rows = []
+                    for idx, row in df.iterrows():
+                        parsed = _parse_row(row)
+                        parsed['row_number'] = idx + 2
+                        preview_rows.append(parsed)
+                    valid_count = sum(1 for row in preview_rows if not row['errors'])
+                    summary = {
+                        'total_rows': len(preview_rows),
+                        'valid_rows': valid_count,
+                        'invalid_rows': len(preview_rows) - valid_count,
+                    }
+                except Exception as exc:
+                    messages.error(request, f'Preview failed: {exc}')
+        elif action == 'confirm':
+            rows = _rows_from_post(request)
+            created = 0
+            updated = 0
+            skipped = 0
+            for row in rows:
+                if row['errors']:
+                    skipped += 1
+                    continue
+                row_data = row['row_data']
+                user, user_created = User.objects.get_or_create(username=row_data['username'], defaults={'email': row_data['email']})
+                if user_created:
+                    password = row_data.get('password') or 'TempPass@123'
+                    user.set_password(password)
+                    user.save()
                 else:
-                    messages.success(request, f'Imported {created} new employees, updated {updated} existing employees.')
-                return redirect('import_employees')
-            except Exception as exc:
-                messages.error(request, f'Import failed: {exc}')
-                return redirect('import_employees')
+                    if row_data.get('email') and user.email != row_data['email']:
+                        user.email = row_data['email']
+                        user.save()
 
+                gender_obj = Gender.objects.filter(name__iexact=row_data.get('gender', '')).first() if row_data.get('gender') else None
+                discipline_obj = Discipline.objects.filter(name__iexact=row_data.get('discipline', '')).first() if row_data.get('discipline') else None
+                job_title_obj = JobTitle.objects.filter(name__iexact=row_data.get('job_title', '')).first() if row_data.get('job_title') else None
+                floor_obj = Floor.objects.filter(name__iexact=row_data.get('floor', '')).first() if row_data.get('floor') else None
+                working_type_obj = WorkingType.objects.filter(name__iexact=row_data.get('working_type', '')).first() if row_data.get('working_type') else None
+                membership_type_obj = MembershipTypeByAdmin.objects.filter(name__iexact=row_data.get('membership_type_by_admin', '')).first() if row_data.get('membership_type_by_admin') else None
+
+                defaults = {
+                    'full_name_en': row_data.get('full_name_en') or row_data.get('username'),
+                    'full_name_vn': row_data.get('full_name_vn') or row_data.get('username'),
+                    'email': row_data.get('email'),
+                    'dob': _parse_date(row_data.get('dob')) or '1900-01-01',
+                    'gender': gender_obj,
+                    'discipline': discipline_obj,
+                    'job_title': job_title_obj,
+                    'floor': floor_obj,
+                    'working_type': working_type_obj,
+                    'identity_number': row_data.get('identity_number') or '',
+                    'native_place': row_data.get('native_place') or '',
+                    'ethnicity': row_data.get('ethnicity') or '',
+                    'religion': row_data.get('religion') or '',
+                    'education_level': row_data.get('education_level') or '',
+                    'specialization': row_data.get('specialization') or '',
+                    'address': row_data.get('address') or '',
+                    'trade_union_member': str(row_data.get('trade_union_member', '')).strip().lower() in {'1', 'true', 'yes', 'y'},
+                    'membership_type_by_admin': membership_type_obj,
+                    'membership_since': _parse_date(row_data.get('membership_since')) or date.today(),
+                }
+
+                existing_employee = Employee.objects.filter(
+                    Q(person_number=row_data['person_number']) |
+                    Q(email=row_data['email']) |
+                    Q(user__username=row_data['username'])
+                ).first()
+                if existing_employee:
+                    for field, value in defaults.items():
+                        setattr(existing_employee, field, value)
+                    existing_employee.user = user
+                    existing_employee.save()
+                    updated += 1
+                else:
+                    Employee.objects.create(
+                        user=user,
+                        person_number=row_data['person_number'],
+                        **defaults,
+                    )
+                    created += 1
+            messages.success(request, f'Imported {created} new employees, updated {updated} existing employees, skipped {skipped} invalid rows.')
+            return redirect('import_employees')
+
+    choice_options = _get_choice_options()
     return render(request, 'employee/import_employees.html', {
         'is_superuser': is_superuser,
         'is_committee': is_committee,
+        'preview_rows': preview_rows,
+        'summary': summary,
+        'import_fields': IMPORT_FIELDS,
+        'choice_options': choice_options,
+        'choice_fields': list(choice_options.keys()),
     })
 
 @login_required

@@ -48,4 +48,6 @@ def get_field_display(obj, field_name):
 
 @register.filter
 def dict_get(d, key):
-    return d.get(key, "-")
+    if not isinstance(d, dict):
+        return ''
+    return d.get(key, '')

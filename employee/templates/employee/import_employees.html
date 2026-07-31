@@ -1,4 +1,5 @@
 {% extends 'employee/base.html' %}
+{% load employee_extras %}
 {% block title %}Import Employees - Endava VN Trade Union{% endblock %}
 {% block content %}
 <div class="container mt-5 page-content" style="max-width: 900px;">
@@ -34,11 +35,96 @@
                     religion, education_level, specialization, address, trade_union_member, membership_type_by_admin, membership_since
                 </div>
 
-                <button type="submit" class="btn btn-primary">Import</button>
+                <button type="submit" name="action" value="preview" class="btn btn-primary">Preview</button>
                 <a href="{% url 'download_employee_template' %}" class="btn btn-outline-primary ms-2">Download Template</a>
                 <a href="/" class="btn btn-secondary ms-2">Cancel</a>
             </form>
         </div>
     </div>
+
+    {% if summary %}
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h5>Preview summary</h5>
+            <p>Total rows: {{ summary.total_rows }}</p>
+            <p>Valid rows: {{ summary.valid_rows }}</p>
+            <p>Invalid rows: {{ summary.invalid_rows }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if preview_rows %}
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h5 class="mb-3">Preview results</h5>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="confirm">
+                <input type="hidden" name="row_count" value="{{ preview_rows|length }}">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>#</th>
+                                <th>Action</th>
+                                {% for field in import_fields %}
+                                <th>{{ field|capfirst }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in preview_rows %}
+                            <tr class="{% if row.errors %}table-danger{% endif %}">
+                                <td class="text-center align-middle">
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-row-btn px-1 py-0" style="width: 28px; height: 28px; line-height: 1;" data-row-idx="{{ forloop.counter0 }}">×</button>
+                                    <input type="hidden" name="row-{{ forloop.counter0 }}-removed" value="0" class="row-removed-input" />
+                                </td>
+                                <td>{{ row.row_number }}</td>
+                                <td>{{ row.action }}</td>
+                                {% for field in import_fields %}
+                                <td>
+                                    {% if field in choice_fields %}
+                                        <select name="row-{{ forloop.parentloop.counter0 }}-{{ field }}" class="form-select form-select-sm {% if row.field_errors|dict_get:field %}is-invalid{% endif %}">
+                                            {% for option in choice_options|dict_get:field %}
+                                                <option value="{{ option.0 }}" {% if option.0|lower == row.row_data|dict_get:field|lower %}selected{% endif %}>{{ option.1 }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% else %}
+                                        <input type="text" name="row-{{ forloop.parentloop.counter0 }}-{{ field }}" value="{{ row.row_data|dict_get:field }}" class="form-control form-control-sm {% if row.field_errors|dict_get:field %}is-invalid{% endif %}" />
+                                    {% endif %}
+                                    {% if row.field_errors|dict_get:field %}
+                                        <div class="invalid-feedback">
+                                            {{ row.field_errors|dict_get:field }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            document.querySelectorAll('.remove-row-btn').forEach(function (button) {
+                                button.addEventListener('click', function () {
+                                    var rowIndex = button.dataset.rowIdx;
+                                    var row = button.closest('tr');
+                                    var removedInput = row.querySelector('input[name="row-' + rowIndex + '-removed"]');
+                                    if (removedInput) {
+                                        removedInput.value = '1';
+                                    }
+                                    row.style.display = 'none';
+                                });
+                            });
+                        });
+                    </script>
+                </div>
+                <button type="submit" class="btn btn-success">Import</button>
+                <a href="{% url 'import_employees' %}" class="btn btn-secondary ms-2">Cancel</a>
+            </form>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
