@@ -31,7 +31,7 @@
                 <div style="font-weight: bold; color: #1976d2; margin-bottom: 8px;">Newcomer File</div>
                 <div><b>Employees are in POT list but not exists in TU list</b>{{ tu_export_time|date:'d/m/Y H:i:s' }}</div>
                 <a href="{{ tu_download_url }}" class="btn btn-info mt-2">Download Newcomer</a>
-                <a href="{% url 'import_employees' %}?newcomer_url={{ tu_download_url|urlencode }}" class="btn btn-outline-primary mt-2 ms-2">Add to dashboard</a>
+                <a href="{% url 'import_employees' %}?newcomer_url={{ tu_download_url|urlencode }}" class="btn btn-outline-info mt-2 ms-2">Update dashboard</a>
             </div>
         {% endif %}
         {% if tu_missing_download_url %}
@@ -39,6 +39,7 @@
                 <div style="font-weight: bold; color: #f57c00; margin-bottom: 8px;">Resigned File</div>
                 <div><b>Employees are not in POT list but still exists in TU list</b></div>
                 <a href="{{ tu_missing_download_url }}" class="btn btn-warning mt-2">Download Resigned</a>
+                <a href="{% url 'import_employees' %}?resigned_url={{ tu_missing_download_url|urlencode }}" class="btn btn-outline-warning mt-2 ms-2">Update dashboard</a>
             </div>
         {% endif %}
         {% if tu_resign_download_url %}
@@ -46,6 +47,34 @@
                 <div style="font-weight: bold; color: #c62828; margin-bottom: 8px;">Resign File</div>
                 <div><b>Employees are about to resign</b></div>
                 <a href="{{ tu_resign_download_url }}" class="btn btn-danger mt-2">Download Resign</a>
+                <a href="?resign_preview_url={{ tu_resign_download_url|urlencode }}" class="btn btn-outline-danger mt-2 ms-2">Preview</a>
+            </div>
+        {% endif %}
+        {% if resign_preview_rows %}
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <h5 class="mb-3">Resign Preview</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Email</th>
+                                    <th>Extra Info / Date of Leaving</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in resign_preview_rows %}
+                                    <tr>
+                                        <td>{{ row.row_number }}</td>
+                                        <td>{{ row.email }}</td>
+                                        <td>{{ row.extra_info }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         {% endif %}
     {% elif is_pot %}

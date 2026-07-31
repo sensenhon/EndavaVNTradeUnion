@@ -946,6 +946,33 @@ def _get_choice_options():
     }
 
 
+def _employee_to_row_data(employee):
+    return {
+        'username': employee.user.username if employee.user else employee.person_number,
+        'password': '',
+        'email': employee.email,
+        'person_number': employee.person_number,
+        'full_name_en': employee.full_name_en,
+        'full_name_vn': employee.full_name_vn,
+        'dob': employee.dob.isoformat() if employee.dob else '',
+        'gender': employee.gender.name if employee.gender else '',
+        'discipline': employee.discipline.name if employee.discipline else '',
+        'job_title': employee.job_title.name if employee.job_title else '',
+        'floor': employee.floor.name if employee.floor else '',
+        'working_type': employee.working_type.name if employee.working_type else '',
+        'identity_number': employee.identity_number or '',
+        'native_place': employee.native_place or '',
+        'ethnicity': employee.ethnicity or '',
+        'religion': employee.religion or '',
+        'education_level': employee.education_level or '',
+        'specialization': employee.specialization or '',
+        'address': employee.address or '',
+        'trade_union_member': 'yes' if employee.trade_union_member else 'no',
+        'membership_type_by_admin': employee.membership_type_by_admin.name if employee.membership_type_by_admin else '',
+        'membership_since': employee.membership_since.date().isoformat() if employee.membership_since else '',
+    }
+
+
 def _rows_from_post(request):
     rows = []
     try:
@@ -986,15 +1013,15 @@ def import_employees(request):
     preview_rows = None
     summary = None
 
-    if request.method == 'GET' and request.GET.get('newcomer_url'):
-        newcomer_url = request.GET.get('newcomer_url')
-        newcomer_filename = os.path.basename(newcomer_url)
-        if newcomer_filename.startswith('tu_pot_newcomer_') and newcomer_filename.endswith('.xlsx'):
-            newcomer_path = os.path.join(settings.BASE_DIR, 'media', 'tu_pot_exports', newcomer_filename)
-            if os.path.exists(newcomer_path):
+    if request.method == 'GET' and (request.GET.get('newcomer_url') or request.GET.get('resigned_url')):
+        file_url = request.GET.get('newcomer_url') or request.GET.get('resigned_url')
+        file_name = os.path.basename(file_url)
+        if file_name.startswith('tu_pot_newcomer_') and file_name.endswith('.xlsx'):
+            file_path = os.path.join(settings.BASE_DIR, 'media', 'tu_pot_exports', file_name)
+            if os.path.exists(file_path):
                 try:
                     df = pd.read_excel(
-                        newcomer_path,
+                        file_path,
                         engine='openpyxl',
                         dtype=str,
                         keep_default_na=False,
@@ -1013,8 +1040,39 @@ def import_employees(request):
                     }
                 except Exception as exc:
                     messages.error(request, f'Preview failed: {exc}')
+        elif (file_name.startswith('tu_pot_resigned_') or file_name.startswith('tu_pot_resigning_')) and file_name.endswith('.xlsx'):
+            file_path = os.path.join(settings.BASE_DIR, 'media', 'tu_pot_exports', file_name)
+            if os.path.exists(file_path):
+                try:
+                    df = pd.read_excel(
+                        file_path,
+                        engine='openpyxl',
+                        dtype=str,
+                        keep_default_na=False,
+                    )
+                    df = df.fillna('')
+                    preview_rows = []
+                    for idx, row in df.iterrows():
+                        email = (row.get('Email') or row.get('email') or '').strip()
+                        employee = Employee.objects.filter(email__iexact=email).first() if email else None
+                        if employee:
+                            row_data = _employee_to_row_data(employee)
+                        else:
+                            row_data = {field: '' for field in IMPORT_FIELDS}
+                            row_data['email'] = email
+                        parsed = _validate_row_data(row_data)
+                        parsed['row_number'] = idx + 2
+                        preview_rows.append(parsed)
+                    valid_count = sum(1 for row in preview_rows if not row['errors'])
+                    summary = {
+                        'total_rows': len(preview_rows),
+                        'valid_rows': valid_count,
+                        'invalid_rows': len(preview_rows) - valid_count,
+                    }
+                except Exception as exc:
+                    messages.error(request, f'Preview failed: {exc}')
         else:
-            messages.error(request, 'Invalid newcomer file selected.')
+            messages.error(request, 'Invalid TU POT file selected.')
 
     if request.method == 'POST':
         action = request.POST.get('action')

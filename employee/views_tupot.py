@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpResponse
+from django.conf import settings
 import io, os
 from employee.models import Employee
 from openpyxl import Workbook
@@ -165,6 +166,29 @@ def tu_pot(request):
     tu_export_time = request.session.pop('tu_export_time', tu_export_time)
     tu_missing_download_url = request.session.pop('tu_missing_download_url', None)
     tu_resign_download_url = request.session.pop('tu_resign_download_url', None)
+    resign_preview_rows = None
+    if request.method == 'GET' and request.GET.get('resign_preview_url'):
+        file_url = request.GET.get('resign_preview_url')
+        file_name = os.path.basename(file_url)
+        if file_name.startswith('tu_pot_resigning_') and file_name.endswith('.xlsx'):
+            file_path = os.path.join(settings.BASE_DIR, 'media', 'tu_pot_exports', file_name)
+            if os.path.exists(file_path):
+                try:
+                    wb = load_workbook(file_path, data_only=True)
+                    ws = wb.active
+                    resign_preview_rows = []
+                    for idx, row in enumerate(ws.iter_rows(min_row=2, max_col=2, values_only=True), start=2):
+                        email_value = row[0] or ''
+                        extra_info_value = row[1] or ''
+                        resign_preview_rows.append({
+                            'row_number': idx,
+                            'email': str(email_value).strip(),
+                            'extra_info': str(extra_info_value).strip(),
+                        })
+                except Exception as exc:
+                    error = f'Resign preview failed: {exc}'
+        else:
+            error = 'Invalid resigning file selected.'
     return render(request, 'employee/tu_pot.html', {
         'error': error,
         'is_superuser': is_superuser,
@@ -181,4 +205,5 @@ def tu_pot(request):
         'pot_export_time': pot_export_time,
         'tu_missing_download_url': tu_missing_download_url,
         'tu_resign_download_url': tu_resign_download_url,
+        'resign_preview_rows': resign_preview_rows,
     })
