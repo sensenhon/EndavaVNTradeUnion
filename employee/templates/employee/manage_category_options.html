@@ -1,0 +1,86 @@
+{% extends 'employee/base.html' %}
+{% block title %}Manage {{ category_label }}{% endblock %}
+{% block content %}
+<div class="container page-content" style="margin-top:80px; max-width:900px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Manage {{ category_label }}</h2>
+            <p class="text-muted mb-0">Select an option, update its name, or delete it.</p>
+        </div>
+        <a href="{% url 'manage_categories' %}" class="btn btn-secondary">Back to Categories</a>
+    </div>
+
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="post" class="row gx-2 gy-2 align-items-end">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update">
+                <div class="col-md-4">
+                    <label class="form-label mb-1" for="item_id">Existing values</label>
+                    <select id="item_id" name="item_id" class="form-control" required>
+                        <option value="">Choose an option</option>
+                        {% for item in items %}
+                            <option value="{{ item.id }}">{{ item.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label mb-1" for="name">New name</label>
+                    <input type="text" id="name" name="name" class="form-control" placeholder="Update name">
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">Save</button>
+                    <button type="button" class="btn btn-outline-danger w-100" id="delete-btn">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Current values</div>
+        <div class="card-body">
+            <div class="list-group">
+                {% for item in items %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ item.name }}</span>
+                    </div>
+                {% empty %}
+                    <div class="list-group-item text-muted">No values yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    var form = document.querySelector('form');
+    var deleteBtn = document.getElementById('delete-btn');
+    var itemSelect = document.getElementById('item_id');
+    if (!deleteBtn) return;
+
+    deleteBtn.addEventListener('click', function() {
+        if (!itemSelect.value) {
+            alert('Please select an option to delete.');
+            return;
+        }
+        if (confirm('Are you sure you want to delete this option?')) {
+            var actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = 'delete';
+            form.appendChild(actionInput);
+            form.submit();
+        }
+    });
+})();
+</script>
+{% endblock %}

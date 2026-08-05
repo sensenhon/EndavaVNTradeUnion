@@ -1,0 +1,66 @@
+{% extends 'employee/base.html' %}
+{% block title %}Manage Category Options{% endblock %}
+{% block content %}
+<div class="container page-content" style="margin-top:80px; max-width:900px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Category Options</h2>
+        <a href="{% url 'committee_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="post" class="row gx-2 gy-2 align-items-end">
+                {% csrf_token %}
+                <div class="col-md-4">
+                    <label class="form-label mb-1" for="id_category_type" style="display:block; margin-bottom:0.25rem;">Category</label>
+                    {{ form.category_type }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label mb-1" for="id_name" style="display:block; margin-bottom:0.25rem;">New value</label>
+                    <div class="input-group">
+                        {{ form.name }}
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-primary">Add</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <!-- intentionally empty spacer -->
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">Current values</div>
+        <div class="card-body">
+            <div class="row">
+                {% for category in categories %}
+                <div class="col-md-4 mb-3">
+                    <div class="border rounded p-3 h-100" style="background:#fff;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">{{ category.label }}</h5>
+                            <a href="{% url 'manage_category_options' category.key %}" class="btn btn-sm btn-outline-secondary">Modify</a>
+                        </div>
+                        <ul class="list-group list-group-flush mb-3">
+                            {% for item in category.items %}
+                                <li class="list-group-item py-2 text-truncate">{{ item.name }}</li>
+                            {% empty %}
+                                <li class="list-group-item py-2 text-muted">No values yet</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

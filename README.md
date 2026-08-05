@@ -37,7 +37,19 @@ pip install -r requirements.txt
 python manage.py migrate
 ```
 
-### 5. Khởi động server
+### 5. Tạo superuser để vào Django Admin
+
+```bash
+python manage.py createsuperuser
+```
+
+Bạn sẽ được yêu cầu nhập username, email và password. Sau khi tạo xong, có thể đăng nhập vào:
+
+```text
+http://127.0.0.1:8000/admin/
+```
+
+### 6. Khởi động server
 
 ```bash
 python manage.py runserver

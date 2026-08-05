@@ -26,7 +26,7 @@ from django.db.models import Q, Sum
 from django.views.decorators.http import require_POST, require_GET
 from django.conf import settings
 from .models import Employee, EditHistory, Discipline, Floor, Gender, JobTitle, WorkingType, MembershipTypeByAdmin, Children, TUCommittee, EmployeeGiftYear, FinancialCategory, TUFinancialTransaction, FinancialDescription, ClubFinancialTransaction, Club, FinancialOpeningBalance
-from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm, ClubFinancialForm
+from .forms import EmployeeRegisterForm, EmployeeLoginForm, EmployeeRegisterForm, CategoryOptionForm, ClubFinancialForm
 
 # Dùng chung cho dashboard và export
 DISPLAY_FIELDS = [
@@ -60,6 +60,145 @@ def is_clubadmin(user):
 
 def is_superuser_committee_clubadmin(user):
 	return user.is_superuser or user.groups.filter(name='TU committee').exists() or is_clubadmin(user)
+
+
+def is_superuser_or_president(user):
+	if not user.is_authenticated:
+		return False
+	if user.is_superuser:
+		return True
+	return TUCommittee.objects.filter(user=user, position='President').exists()
+
+
+def get_category_definitions():
+	return [
+		('discipline', 'Discipline', Discipline),
+		('job_title', 'Job Title', JobTitle),
+		('floor', 'Floor', Floor),
+		('gender', 'Gender', Gender),
+		('working_type', 'Working Type', WorkingType),
+		('membership_type_by_admin', 'Membership Type (Admin)', MembershipTypeByAdmin),
+	]
+
+
+def get_category_by_key(category_key):
+	for key, label, model in get_category_definitions():
+		if key == category_key:
+			return key, label, model
+	return None, None, None
+
+
+@login_required
+@user_passes_test(is_superuser_or_president)
+def manage_categories(request):
+	form = CategoryOptionForm(request.POST or None)
+	category_definitions = get_category_definitions()
+	categories = []
+	for key, label, model in category_definitions:
+		categories.append({'key': key, 'label': label, 'items': model.objects.all().order_by('name')})
+	if request.method == 'POST':
+		action = request.POST.get('action')
+		if action == 'delete':
+			category_type = request.POST.get('category_type')
+			item_id = request.POST.get('item_id')
+			selected_model = dict((key, model) for key, _, model in category_definitions).get(category_type)
+			if selected_model and item_id:
+				item = selected_model.objects.filter(id=item_id).first()
+				if item:
+					item_name = item.name
+					item.delete()
+					messages.success(request, f"Đã xóa '{item_name}' khỏi {selected_model._meta.verbose_name.title()}.")
+				else:
+					messages.warning(request, 'Không tìm thấy giá trị để xóa.')
+			return redirect('manage_categories')
+		if action == 'update':
+			category_type = request.POST.get('category_type')
+			item_id = request.POST.get('item_id')
+			name = request.POST.get('name', '').strip()
+			selected_model = dict((key, model) for key, _, model in category_definitions).get(category_type)
+			if selected_model and item_id:
+				item = selected_model.objects.filter(id=item_id).first()
+				if item:
+					if not name:
+						messages.warning(request, 'Tên tùy chọn không được để trống.')
+					elif selected_model.objects.filter(name__iexact=name).exclude(id=item.id).exists():
+						messages.warning(request, f"'{name}' đã tồn tại trong {selected_model._meta.verbose_name.title()}.")
+					else:
+						item.name = name
+						item.save()
+						messages.success(request, f"Đã cập nhật giá trị thành '{item.name}' trong {selected_model._meta.verbose_name.title()}.")
+				else:
+					messages.warning(request, 'Không tìm thấy giá trị để cập nhật.')
+			else:
+				messages.warning(request, 'Dữ liệu cập nhật không hợp lệ.')
+			return redirect('manage_categories')
+		if form.is_valid():
+			category_type = form.cleaned_data['category_type']
+			name = form.cleaned_data['name'].strip()
+			selected_model = dict((key, model) for key, _, model in category_definitions).get(category_type)
+			if selected_model:
+				if selected_model.objects.filter(name__iexact=name).exists():
+					messages.warning(request, f"'{name}' đã tồn tại trong {selected_model._meta.verbose_name.title()}." )
+				else:
+					selected_model.objects.create(name=name)
+					messages.success(request, f"Đã thêm '{name}' vào {selected_model._meta.verbose_name.title()}." )
+			return redirect('manage_categories')
+	return render(request, 'employee/manage_categories.html', {
+		'form': form,
+		'categories': categories,
+		'is_superuser': request.user.is_superuser,
+		'is_committee': request.user.groups.filter(name='TU committee').exists(),
+		'is_pot': request.user.groups.filter(name='pot').exists() if request.user.is_authenticated else False,
+		'is_president': is_superuser_or_president(request.user),
+	})
+
+
+@login_required
+@user_passes_test(is_superuser_or_president)
+def manage_category_options(request, category_key):
+	category_key, category_label, selected_model = get_category_by_key(category_key)
+	if not selected_model:
+		messages.warning(request, 'Không tìm thấy category.')
+		return redirect('manage_categories')
+
+	items = selected_model.objects.all().order_by('name')
+	if request.method == 'POST':
+		action = request.POST.get('action')
+		item_id = request.POST.get('item_id')
+		item = selected_model.objects.filter(id=item_id).first() if item_id else None
+		if action == 'delete':
+			if item:
+				item_name = item.name
+				item.delete()
+				messages.success(request, f"Đã xóa '{item_name}' khỏi {selected_model._meta.verbose_name.title()}.")
+			else:
+				messages.warning(request, 'Không tìm thấy giá trị để xóa.')
+			return redirect('manage_category_options', category_key=category_key)
+		if action == 'update':
+			name = request.POST.get('name', '').strip()
+			if not item:
+				messages.warning(request, 'Vui lòng chọn một giá trị để cập nhật.')
+			elif not name:
+				messages.warning(request, 'Tên tùy chọn không được để trống.')
+			elif selected_model.objects.filter(name__iexact=name).exclude(id=item.id).exists():
+				messages.warning(request, f"'{name}' đã tồn tại trong {selected_model._meta.verbose_name.title()}.")
+			else:
+				item.name = name
+				item.save()
+				messages.success(request, f"Đã cập nhật giá trị thành '{item.name}' trong {selected_model._meta.verbose_name.title()}.")
+			return redirect('manage_category_options', category_key=category_key)
+
+	items = selected_model.objects.all().order_by('name')
+	return render(request, 'employee/manage_category_options.html', {
+		'category_key': category_key,
+		'category_label': category_label,
+		'items': items,
+		'is_superuser': request.user.is_superuser,
+		'is_committee': request.user.groups.filter(name='TU committee').exists(),
+		'is_pot': request.user.groups.filter(name='pot').exists() if request.user.is_authenticated else False,
+		'is_president': is_superuser_or_president(request.user),
+	})
+
 
 @login_required
 @user_passes_test(is_superuser_committee_clubadmin)
@@ -416,6 +555,7 @@ def committee_dashboard(request):
 		'selected_birth_month': birth_month_query,
 		'is_superuser': request.user.is_superuser,
 		'is_committee': is_committee,
+		'is_president': is_superuser_or_president(request.user),
 		'tu_committee_map': tu_committee_map,
 		'tu_committee_map_newcomers': tu_committee_map_newcomers,
 		'tu_committees': tu_committees,

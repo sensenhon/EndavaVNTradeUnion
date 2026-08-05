@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import committee_dashboard, financial_view
+from .views import committee_dashboard, financial_view, manage_categories, manage_category_options
 from . import views, views_tupot
 
 urlpatterns = [
@@ -32,4 +32,6 @@ urlpatterns = [
     path('club-financial/delete/<int:pk>/', views.delete_club_financial_transaction, name='delete_club_financial_transaction'),
     path('import-employees/', views.import_employees, name='import_employees'),
     path('import-employees/template/', views.download_employee_template, name='download_employee_template'),
+    path('manage-categories/', manage_categories, name='manage_categories'),
+    path('manage-categories/<slug:category_key>/', manage_category_options, name='manage_category_options'),
 ]

@@ -6,6 +6,26 @@ class EmployeeLoginForm(forms.Form):
     username = forms.CharField(max_length=150, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}), label='Username')
     password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control'}), required=True, label='Password')
 
+class CategoryOptionForm(forms.Form):
+    CATEGORY_CHOICES = [
+        ('discipline', 'Discipline'),
+        ('job_title', 'Job Title'),
+        ('floor', 'Floor'),
+        ('gender', 'Gender'),
+        ('working_type', 'Working Type'),
+        ('membership_type_by_admin', 'Membership Type (Admin)'),
+    ]
+    category_type = forms.ChoiceField(
+        choices=CATEGORY_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Category'
+    )
+    name = forms.CharField(
+        max_length=100,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label='New option'
+    )
+
 class EmployeeRegisterForm(forms.ModelForm):
     membership_since = forms.DateTimeField(
         required=False,

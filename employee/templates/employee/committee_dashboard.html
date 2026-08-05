@@ -11,8 +11,9 @@
         <form method="get" class="d-flex" style="align-items:center; gap:6px; flex-wrap:wrap; flex:1;">
             <input type="text" name="name" class="form-control form-control-sm" placeholder="Search name" value="{{ request.GET.name }}">
         </form>
-        <form method="get" class="d-flex" style="align-items:center; gap:6px; flex-wrap:wrap;">
-            <select name="discipline" class="form-select form-control-sm" style="color:rgba(33,37,41,0.6); border-color:rgba(33,37,41,0.3); background-color:rgba(255,255,255,0.95);">
+        <div class="d-flex" style="align-items:center; gap:6px; flex-wrap:wrap;">
+            <form method="get" class="d-flex" style="align-items:center; gap:6px; flex-wrap:wrap;">
+                <select name="discipline" class="form-select form-control-sm" style="color:rgba(33,37,41,0.6); border-color:rgba(33,37,41,0.3); background-color:rgba(255,255,255,0.95);">
                 <option value="" style="color:rgba(33,37,41,0.5);">All Disciplines</option>
                 {% for d in discipline_list %}
                     <option value="{{ d.name }}" {% if request.GET.discipline == d.name %}selected{% endif %} style="color:rgba(33,37,41,0.7);">{{ d.name }}</option>
